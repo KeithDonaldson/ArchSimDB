@@ -1,0 +1,21 @@
+<!doctype html>
+<title>Results | Graph Calculator</title>
+
+<a href="/"><strong>&larr; Back</strong></a>
+
+<div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes list-style="none">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+</div>
+
+<div>
+    <img src="{{ url_for('static', filename='chart.png') }}" alt="Histogram" />
+</div>
+{% block body %}{% endblock %}
