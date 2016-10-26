@@ -30,5 +30,7 @@ def main(global_config, **settings):
     config.add_request_method(add_fs, 'fs', reify=True)
 
     config.add_route('home', '/')
+    config.add_route('upload', '/upload')
+    config.add_route('upload_processor', '/upload_processor')
     config.scan()
     return config.make_wsgi_app()
