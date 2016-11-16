@@ -35,7 +35,9 @@ Currently the only accepted statfiles are ones generated from the Flexus simulat
 1. Go to http://localhost:6543/upload
 2. Click on the 'Browse...' button and choose a Flexus statfile.
 3. Click 'submit'
-4. You should receive a confirmation page with a snippet of the inserted data in JSON format and the ObjectID.
+4. You should receive a confirmation page with a snippet of the inserted data in JSON format and the ObjectID, such as below.
+
+![Website Screenshot of Upload](http://puu.sh/skFcS/97a17ade1a.png "Website Screenshot of Uplaod")
 
 ## Tutorial
 
