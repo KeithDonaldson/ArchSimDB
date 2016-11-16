@@ -28,6 +28,15 @@ The webapp should now be running locally, with the default port being http://loc
 
 If you have an empty database, or one with a different schema to ArchSimDB, you'll likely get empty data here.
 
+## Uploading a statfile
+
+Currently the only accepted statfiles are ones generated from the Flexus simulator. To upload a file:
+
+1. Go to http://localhost:6543/upload
+2. Click on the 'Browse...' button and choose a Flexus statfile.
+3. Click 'submit'
+4. You should receive a confirmation page with a snippet of the inserted data in JSON format and the ObjectID.
+
 ## Tutorial
 
 More in-depth explanation of the system will follow.
