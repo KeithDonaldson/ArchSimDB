@@ -21,7 +21,7 @@ chart = None
 
 @app.route("/")
 def start():
-    return render_template('index.html')
+    return render_template('index.pt')
 
 
 def allowed_file(filename):

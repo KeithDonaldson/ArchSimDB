@@ -1,1 +1,4 @@
 revisions/*
+proj.egg-info/*
+.idea/*
+MANIFEST.in

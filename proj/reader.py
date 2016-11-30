@@ -61,11 +61,11 @@ class Parser:
 
         self.input_data = lines
 
-        # Deal with the first line, always 'sum'.
+        # Deal with the first line, always 'sum' or 'all'.
 
-        if self.input_data[0] != "sum":
-            logging.error("No 'sum' found")
-            raise ParserException("Sum not included on line 1")
+        if self.input_data[0] != "sum" and self.input_data[0] != "all":
+            logging.error("No 'sum' or 'all' found")
+            raise ParserException("Sum or all not included on line 1, found '" + self.input_data[0] + "'")
 
         line_type = self.next_type()
         self.line_number += 1

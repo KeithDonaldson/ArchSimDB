@@ -1,9 +1,21 @@
 from pyramid.view import view_config
+from pyramid.renderers import get_renderer
+from pyramid.interfaces import IBeforeRender
+from pyramid.events import subscriber
+from pyramid.response import Response
+
 from .reader import *
 import os
 import uuid
 import shutil
 from bson.json_util import dumps
+from datetime import datetime
+
+
+@subscriber(IBeforeRender)
+def globals_factory(event):
+    master = get_renderer('templates/master.pt').implementation()
+    event['master'] = master
 
 
 @view_config(route_name='home', renderer='templates/index.pt')
@@ -29,7 +41,14 @@ def upload_processor(request):
     :return:
     """
 
-    input_file = request.POST['txt'].file
+    metadata = {}
+    for key, val in request.POST.items():
+        if key != 'statfile':
+            metadata[key] = val
+        if key == 'sim_date':
+            metadata[key] = datetime.strptime(val, "%Y-%m-%d")
+
+    input_file = request.POST['statfile'].file
     file_path = os.path.join('/tmp', '%s.txt' % uuid.uuid4())
     temp_file_path = file_path + '~'
     input_file.seek(0)
@@ -42,6 +61,10 @@ def upload_processor(request):
     db_actions = DatabaseActions
 
     parsed_data = file_reader.load(file_path)
+
+    for key, val in metadata.items():
+        parsed_data[key] = val
+
     inserted_id = db_actions.insert_application(request, parsed_data)
     parsed_data = db_actions.find_application_by_id(request, inserted_id)
 
@@ -51,6 +74,14 @@ def upload_processor(request):
 
     request.response.status = 200
     return db_data
+
+
+@view_config(route_name='applications', renderer='templates/applications.pt')
+def applications(request):
+    db_actions = DatabaseActions
+    all_applications = db_actions.get_all_applications(request)
+
+    return {'applications': dumps([dict(pn) for pn in all_applications])}
 
 
 def insert_document(parsed_data, request):
@@ -99,3 +130,9 @@ class DatabaseActions:
     @staticmethod
     def find_application_by_id(request, document_id):
         return request.db['applications'].find_one({'_id': document_id})
+
+    @staticmethod
+    def get_all_applications(request):
+        applications = {}
+        return request.db['applications'].find({}, projection=['_sim_name', '_sim_owner', '_sim_date',
+                                                               '_cpu_arch', '_benchmark'])
