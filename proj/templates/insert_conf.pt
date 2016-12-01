@@ -11,6 +11,10 @@
         </div>
 
         <div class="content">
+            <div tal:condition="exists:inserted_id" class="alert alert-success alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                Successfully inserted a configuration with id <span tal:replace="inserted_id" />.
+            </div>
             <p>
                 Please fill out the forms below to create a new configuration. Configurations are purely
                 metadata objects, and are a collection of applications/simulations. A configuration also

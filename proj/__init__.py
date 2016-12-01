@@ -37,6 +37,7 @@ def main(global_config, **settings):
     config.add_route('add/experiment', '/add/experiment')
     config.add_route('add/configuration', '/add/configuration')
     config.add_route('post/conflist', '/post/conflist')
+    config.add_route('flot', '/flot')
 
     config.scan()
     return config.make_wsgi_app()

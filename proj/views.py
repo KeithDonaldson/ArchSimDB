@@ -61,14 +61,8 @@ def upload(request):
             parsed_data[key] = val
 
         inserted_id = db_actions.insert_application(request, parsed_data)
-        parsed_data = db_actions.find_application_by_id(request, inserted_id)
 
-        db_data = home(request)
-        db_data['inserted_id'] = inserted_id
-        db_data['inserted_data'] = dumps(parsed_data, sort_keys=True, indent=4)[:1000]
-
-        request.response.status = 200
-        return db_data
+        return {'inserted_id': inserted_id}
     else:
         return {}
 
@@ -89,10 +83,8 @@ def add_conf(request):
                 conf_data[key] = val
 
         db_actions = DatabaseActions()
-
         inserted_id = db_actions.insert_configuration(request, conf_data)
 
-        request.response.status = 200
         return {'inserted_id': inserted_id}
     else:
         return {}
@@ -124,6 +116,11 @@ def configurations(request):
                 conf[key] = val.strftime("%Y-%m-%d")
 
     return {'configurations': dumps(conf_dict)}
+
+
+@view_config(route_name='flot', renderer='templates/flot.pt')
+def flot(request):
+    return {}
 
 
 # --------------------------- #
