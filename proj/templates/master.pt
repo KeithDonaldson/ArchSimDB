@@ -92,10 +92,35 @@
                             <a href="/"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
                         </li>
                         <li>
-                            <a href="/applications"><i class="fa fa-table fa-fw"></i> List of Applications</a>
+                            <a href="#"><i class="fa fa-search fa-fw"></i> Search Database<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="/query"><i class="fa fa-question-circle fa-fw"></i> Query Database</a>
+                                </li>
+                                <li>
+                                    <a href="/experiments"><i class="fa fa-table fa-fw"></i> List of Experiments</a>
+                                </li>
+                                <li>
+                                    <a href="/configurations"><i class="fa fa-table fa-fw"></i> List of Configurations</a>
+                                </li>
+                                <li>
+                                    <a href="/applications"><i class="fa fa-table fa-fw"></i> List of Applications</a>
+                                </li>
+                            </ul>
                         </li>
                         <li>
-                            <a href="/upload"><i class="fa fa-upload fa-fw"></i> Upload</a>
+                            <a href="#"><i class="fa fa-plus fa-fw"></i> Insert<span class="fa arrow"></span></a>
+                            <ul class="nav nav-second-level">
+                                <li>
+                                    <a href="/add/application"><i class="fa fa-upload fa-fw"></i> Upload Statfile</a>
+                                </li>
+                                <li>
+                                    <a href="/add/experiment"><i class="fa fa-plus fa-fw"></i> Add Experiment</a>
+                                </li>
+                                <li>
+                                    <a href="/add/configuration"><i class="fa fa-plus fa-fw"></i> Add Configuration</a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </div>

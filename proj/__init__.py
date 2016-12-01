@@ -30,8 +30,13 @@ def main(global_config, **settings):
     config.add_request_method(add_fs, 'fs', reify=True)
 
     config.add_route('home', '/')
-    config.add_route('upload', '/upload')
+    config.add_route('upload', '/add/application')
     config.add_route('upload_processor', '/upload_processor')
     config.add_route('applications', '/applications')
+    config.add_route('configurations', '/configurations')
+    config.add_route('add/experiment', '/add/experiment')
+    config.add_route('add/configuration', '/add/configuration')
+    config.add_route('post/conflist', '/post/conflist')
+
     config.scan()
     return config.make_wsgi_app()

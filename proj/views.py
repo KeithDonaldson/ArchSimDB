@@ -2,14 +2,18 @@ from pyramid.view import view_config
 from pyramid.renderers import get_renderer
 from pyramid.interfaces import IBeforeRender
 from pyramid.events import subscriber
-from pyramid.response import Response
-
+from pyramid.httpexceptions import HTTPFound
 from .reader import *
+from .dbaccess import *
 import os
 import uuid
 import shutil
 from bson.json_util import dumps
 from datetime import datetime
+
+# --------------------------- #
+# --- Human-visible pages --- #
+# --------------------------- #
 
 
 @subscriber(IBeforeRender)
@@ -31,58 +35,124 @@ def home(request):
 
 @view_config(route_name='upload', renderer='templates/upload.pt')
 def upload(request):
-    return {}
+    if '_sim_name' in request.POST:
+        metadata = {}
+        for key, val in request.POST.items():
+            if key != 'statfile':
+                if key == '_sim_date':
+                    metadata[key] = datetime.strptime(val, "%Y-%m-%d")
+                else:
+                    metadata[key] = val
+
+        input_file = request.POST['statfile'].file
+        file_path = os.path.join('/tmp', '%s.txt' % uuid.uuid4())
+        temp_file_path = file_path + '~'
+        input_file.seek(0)
+        with open(temp_file_path, 'wb') as output_file:
+            shutil.copyfileobj(input_file, output_file)
+        os.rename(temp_file_path, file_path)
+
+        file_reader = Reader
+        db_actions = DatabaseActions()
+
+        parsed_data = file_reader.load(file_path)
+
+        for key, val in metadata.items():
+            parsed_data[key] = val
+
+        inserted_id = db_actions.insert_application(request, parsed_data)
+        parsed_data = db_actions.find_application_by_id(request, inserted_id)
+
+        db_data = home(request)
+        db_data['inserted_id'] = inserted_id
+        db_data['inserted_data'] = dumps(parsed_data, sort_keys=True, indent=4)[:1000]
+
+        request.response.status = 200
+        return db_data
+    else:
+        return {}
 
 
-@view_config(route_name='upload_processor', renderer='templates/index.pt')
-def upload_processor(request):
+@view_config(route_name='add/configuration', renderer='templates/insert_conf.pt')
+def add_conf(request):
     """
     :param request:
     :return:
     """
 
-    metadata = {}
-    for key, val in request.POST.items():
-        if key != 'statfile':
-            metadata[key] = val
-        if key == 'sim_date':
-            metadata[key] = datetime.strptime(val, "%Y-%m-%d")
+    if '_conf_name' in request.POST:
+        conf_data = {}
+        for key, val in request.POST.items():
+            if key == '_conf_date':
+                conf_data[key] = datetime.strptime(val, "%Y-%m-%d")
+            else:
+                conf_data[key] = val
 
-    input_file = request.POST['statfile'].file
-    file_path = os.path.join('/tmp', '%s.txt' % uuid.uuid4())
-    temp_file_path = file_path + '~'
-    input_file.seek(0)
-    with open(temp_file_path, 'wb') as output_file:
-        shutil.copyfileobj(input_file, output_file)
-    os.rename(temp_file_path, file_path)
+        db_actions = DatabaseActions()
 
-    file_reader = Reader
-    db_info = DatabaseInfo
-    db_actions = DatabaseActions
+        inserted_id = db_actions.insert_configuration(request, conf_data)
 
-    parsed_data = file_reader.load(file_path)
-
-    for key, val in metadata.items():
-        parsed_data[key] = val
-
-    inserted_id = db_actions.insert_application(request, parsed_data)
-    parsed_data = db_actions.find_application_by_id(request, inserted_id)
-
-    db_data = home(request)
-    db_data['inserted_id'] = inserted_id
-    db_data['inserted_data'] = dumps(parsed_data, sort_keys=True, indent=4)[:1000]
-
-    request.response.status = 200
-    return db_data
+        request.response.status = 200
+        return {'inserted_id': inserted_id}
+    else:
+        return {}
 
 
 @view_config(route_name='applications', renderer='templates/applications.pt')
 def applications(request):
-    db_actions = DatabaseActions
+    db_actions = DatabaseActions()
     all_applications = db_actions.get_all_applications(request)
+    app_dict = [dict(pn) for pn in all_applications]
 
-    return {'applications': dumps([dict(pn) for pn in all_applications])}
+    for app in app_dict:
+        for key, val in app.items():
+            if key == '_sim_date':
+                app[key] = val.strftime("%Y-%m-%d")
 
+    return {'applications': dumps(app_dict)}
+
+
+@view_config(route_name='configurations', renderer='templates/configurations.pt')
+def configurations(request):
+    db_actions = DatabaseActions()
+    all_configurations = db_actions.get_all_configurations(request)
+    conf_dict = [dict(pn) for pn in all_configurations]
+
+    for conf in conf_dict:
+        for key, val in conf.items():
+            if key == '_conf_date':
+                conf[key] = val.strftime("%Y-%m-%d")
+
+    return {'configurations': dumps(conf_dict)}
+
+
+# --------------------------- #
+# ------ POST requests ------ #
+# --------------------------- #
+
+
+# @view_config(route_name='post/applist')
+# def post_applist(request):
+#     db_actions = DatabaseActions()
+#     all_applications = db_actions.get_all_applications(request)
+#
+#     return {'applications': dumps([dict(pn) for pn in all_applications])}
+
+
+@view_config(route_name='post/conflist', renderer='json')
+def post_conflist(request):
+    db_actions = DatabaseActions()
+    all_configurations = db_actions.get_all_configurations(request)
+
+    return {'configurations': dumps([dict(pn) for pn in all_configurations])}
+
+
+# @view_config(route_name='post/explist')
+# def post_explist(request):
+#     db_actions = DatabaseActions()
+#     all_experiments = db_actions.get_all_experiments(request)
+#
+#     return {'applications': dumps([dict(pn) for pn in all_experiments])}
 
 def insert_document(parsed_data, request):
     """
@@ -97,42 +167,3 @@ def insert_document(parsed_data, request):
 
     return inserted_id
 
-
-class DatabaseInfo:
-
-    @staticmethod
-    def get_all_collection_names(request):
-        return request.db.collection_names()
-
-    @staticmethod
-    def get_collection_count(request, collection_name):
-        return request.db[collection_name].count()
-
-    @staticmethod
-    def get_experiment_count(request):
-        return request.db['experiments'].count()
-
-    @staticmethod
-    def get_configuration_count(request):
-        return request.db['configurations'].count()
-
-    @staticmethod
-    def get_applications_count(request):
-        return request.db['applications'].count()
-
-
-class DatabaseActions:
-
-    @staticmethod
-    def insert_application(request, document_data):
-        return request.db['applications'].insert_one(document_data).inserted_id
-
-    @staticmethod
-    def find_application_by_id(request, document_id):
-        return request.db['applications'].find_one({'_id': document_id})
-
-    @staticmethod
-    def get_all_applications(request):
-        applications = {}
-        return request.db['applications'].find({}, projection=['_sim_name', '_sim_owner', '_sim_date',
-                                                               '_cpu_arch', '_benchmark'])
