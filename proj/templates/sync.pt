@@ -1,0 +1,37 @@
+<metal:macro use-macro="master">
+    <metal:slot fill-slot="scripts">
+        <script type="text/javascript" id="logs_list" logs="${logs}">
+            var logs = $("#logs_list").attr("logs").replace(/'/g, '"');
+            logs = JSON.parse(logs);
+            $(document).ready(function() {
+                function makeUL(array) {
+                    var list = document.createElement('pre');
+                    for(var i in array) {
+                        var item = document.createElement('p');
+                        item.appendChild(document.createTextNode(array[i]));
+                        list.appendChild(item);
+                    }
+                    return list;
+                }
+
+                document.getElementById('logs').appendChild(makeUL(logs));
+            });
+        </script>
+    </metal:slot>
+    <metal:slot fill-slot="body">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">Synced!</h1>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <!-- /.row -->
+        <div class="row">
+            <div class="col-lg-12">
+                <p>Succesfully synced. Please see the logs below for more details.</p>
+                <h4>Logs:</h4>
+                <div id="logs"></div>
+            </div>
+        </div>
+    </metal:slot>
+</metal:macro>

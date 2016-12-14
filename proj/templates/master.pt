@@ -122,6 +122,9 @@
                                 </li>
                             </ul>
                         </li>
+                        <li>
+                            <a href="/sync"><i class="fa fa-refresh fa-fw"></i> Sync</a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

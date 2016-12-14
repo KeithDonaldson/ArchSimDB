@@ -37,6 +37,29 @@ class DatabaseActions:
     Provides methods for interacting with the data inside the database.
     """
 
+    def handle_sync(self, request, list_of_statfiles):
+        experiment_names = self.get_all_experiment_names(request)
+        configurations = self.get_all_configurations(request)
+
+        conf_pairs = []
+        for config in configurations:
+            conf_pairs.append([config.get('_conf_name'), config.get('_exp_name')])
+
+        for parsed_statfile in list_of_statfiles:
+            if parsed_statfile.get('_exp_name') not in experiment_names:
+                exp_metadata = {'_exp_name': parsed_statfile.get('_exp_name'),
+                                '_exp_owner': parsed_statfile.get('_sim_owner'),
+                                '_exp_date': parsed_statfile.get('_sim_date')}
+                self.insert_experiment(request, exp_metadata)
+            conf_identity = [parsed_statfile.get('_conf_name'), parsed_statfile.get('_exp_name')]
+            if conf_identity not in conf_pairs:
+                conf_metadata = {'_conf_name': parsed_statfile.get('_conf_name'),
+                                 '_conf_owner': parsed_statfile.get('_sim_owner'),
+                                 '_conf_date': parsed_statfile.get('_sim_date'),
+                                 '_exp_name': parsed_statfile.get('_exp_name')}
+                self.insert_configuration(request, conf_metadata)
+            self.insert_application(request, parsed_statfile)
+
     @staticmethod
     def insert_application(request, document_data):
         return request.db['applications'].insert_one(document_data).inserted_id
@@ -46,26 +69,43 @@ class DatabaseActions:
         return request.db['configurations'].insert_one(document_data).inserted_id
 
     @staticmethod
+    def insert_experiment(request, document_data):
+        return request.db['experiments'].insert_one(document_data).inserted_id
+
+    @staticmethod
     def find_application_by_id(request, document_id):
         return request.db['applications'].find_one({'_id': document_id})
 
     @staticmethod
+    def get_all_experiment_names(request):
+        names = []
+        all_experiments = request.db['applications'].find({}, projection=['_exp_name'])
+        for exp in all_experiments:
+            names.append(exp.get('_exp_name'))
+
+        return names
+
+    @staticmethod
+    def get_all_configuration_names(request):
+        names = []
+        all_configurations = request.db['configurations'].find({}, projection=['_conf_name'])
+        for conf in all_configurations:
+            names.append(conf.get('_conf_name'))
+
+        return names
+
+    @staticmethod
     def get_all_applications(request):
         return request.db['applications'].find({}, projection=['_sim_name', '_sim_owner', '_sim_date',
-                                                               '_cpu_arch', '_benchmark'])
+                                                               '_exp_name', '_conf_name'])
 
     @staticmethod
     def get_all_configurations(request):
-        db_info = DatabaseInfo()
-        configurations = request.db['configurations'].find({}, projection=['_conf_name', '_conf_owner', '_conf_date'])
+        return request.db['configurations'].find({}, projection=['_conf_name', '_conf_owner', '_conf_date',
+                                                                 '_exp_name'])
 
-        return configurations
+    @staticmethod
+    def get_all_experiments(request):
+        return request.db['experiments'].find({}, projection=['_exp_name', '_exp_owner', '_exp_date'])
 
-    # @staticmethod
-    # def get_all_experiments(request):
-    #     db_info = DatabaseInfo()
-    #     configurations = request.db['configurations'].find({}, projection=['_conf_name', '_conf_owner', '_conf_date'])
-    #     for config in configurations:
-    #         config['app_count'] = db_info.get_applications_count_by_conf(request, config['_id'])
-    #
-    #     return configurations
+

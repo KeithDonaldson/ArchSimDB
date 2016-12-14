@@ -31,13 +31,13 @@ def main(global_config, **settings):
 
     config.add_route('home', '/')
     config.add_route('upload', '/add/application')
+    config.add_route('add/configuration', '/add/configuration')
     config.add_route('upload_processor', '/upload_processor')
     config.add_route('applications', '/applications')
     config.add_route('configurations', '/configurations')
-    config.add_route('add/experiment', '/add/experiment')
-    config.add_route('add/configuration', '/add/configuration')
-    config.add_route('post/conflist', '/post/conflist')
+    config.add_route('experiments', '/experiments')
     config.add_route('flot', '/flot')
+    config.add_route('sync', '/sync')
 
     config.scan()
     return config.make_wsgi_app()

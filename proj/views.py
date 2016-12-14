@@ -2,11 +2,15 @@ from pyramid.view import view_config
 from pyramid.renderers import get_renderer
 from pyramid.interfaces import IBeforeRender
 from pyramid.events import subscriber
+from pyramid.events import NewRequest
 from pyramid.httpexceptions import HTTPFound
 from .reader import *
 from .dbaccess import *
+from .scanner import *
 import os
 import uuid
+import logging
+log = logging.getLogger(__name__)
 import shutil
 from bson.json_util import dumps
 from datetime import datetime
@@ -118,49 +122,33 @@ def configurations(request):
     return {'configurations': dumps(conf_dict)}
 
 
+@view_config(route_name='experiments', renderer='templates/experiments.pt')
+def experiments(request):
+    db_actions = DatabaseActions()
+    all_experiments = db_actions.get_all_experiments(request)
+    exp_dict = [dict(pn) for pn in all_experiments]
+
+    for exp in exp_dict:
+        for key, val in exp.items():
+            if key == '_exp_date':
+                exp[key] = val.strftime("%Y-%m-%d")
+
+    return {'experiments': dumps(exp_dict)}
+
+
 @view_config(route_name='flot', renderer='templates/flot.pt')
 def flot(request):
     return {}
 
 
-# --------------------------- #
-# ------ POST requests ------ #
-# --------------------------- #
-
-
-# @view_config(route_name='post/applist')
-# def post_applist(request):
-#     db_actions = DatabaseActions()
-#     all_applications = db_actions.get_all_applications(request)
-#
-#     return {'applications': dumps([dict(pn) for pn in all_applications])}
-
-
-@view_config(route_name='post/conflist', renderer='json')
-def post_conflist(request):
+@view_config(route_name='sync', renderer='templates/sync.pt')
+def sync(request):
+    scanner = Scanner()
     db_actions = DatabaseActions()
-    all_configurations = db_actions.get_all_configurations(request)
+    scanning_results = scanner.scanner()
 
-    return {'configurations': dumps([dict(pn) for pn in all_configurations])}
+    list_of_inserts = scanning_results.get('statfile_data')
+    logs = scanning_results.get('logs')
+    db_actions.handle_sync(request, list_of_inserts)
 
-
-# @view_config(route_name='post/explist')
-# def post_explist(request):
-#     db_actions = DatabaseActions()
-#     all_experiments = db_actions.get_all_experiments(request)
-#
-#     return {'applications': dumps([dict(pn) for pn in all_experiments])}
-
-def insert_document(parsed_data, request):
-    """
-    Just inserts arbitrary static data into the database for now until I have a parser.
-
-    :param file_path: The path to the newly uploaded txt file
-    :return: Response
-    """
-
-    actions = DatabaseActions()
-    inserted_id = actions.insert_application(request, parsed_data)
-
-    return inserted_id
-
+    return {'inserted_no': len(list_of_inserts), 'logs': logs}

@@ -15,7 +15,7 @@
         <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
-        <script type="text/javascript" tal:content="string:var data=$applications; $(document).ready(function() { $('#application_table').DataTable( {data: data, columns: [ {data: '_sim_name'}, {data: '_sim_owner'}, {data: '_cpu_arch'}, {data: '_benchmark'}, {data: '_sim_date'} ], responsive: true }); });"></script>
+        <script type="text/javascript" tal:content="string:var data=$applications; $(document).ready(function() { $('#application_table').DataTable( {data: data, columns: [ {data: '_sim_name'}, {data: '_sim_owner'}, {data: '_conf_name'}, {data: '_exp_name'}, {data: '_sim_date'} ], responsive: true }); });"></script>
     </metal:slot>
 
     <metal:slot fill-slot="body">
@@ -33,8 +33,8 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Owner</th>
-                                <th>CPU Architecture</th>
-                                <th>Benchmark</th>
+                                <th>Parent Configuration</th>
+                                <th>Parent Experiment</th>
                                 <th>Date</th>
                             </tr>
                         </thead>

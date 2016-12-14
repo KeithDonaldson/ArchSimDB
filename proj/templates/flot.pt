@@ -5,7 +5,7 @@
 
     <metal:slot fill-slot="head">
         <!-- Morris Charts CSS -->
-        <link href="../vendor/morrisjs/morris.css" rel="stylesheet">
+        <link href="${request.static_url('proj:static/vendor/morrisjs/morris.css')}" rel="stylesheet">
     </metal:slot>
 
     <metal:slot fill-slot="scripts">
