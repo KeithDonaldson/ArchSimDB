@@ -1,5 +1,5 @@
-from bson.objectid import ObjectId
 import logging
+
 
 class DatabaseInfo:
     """
@@ -37,39 +37,76 @@ class DatabaseActions:
     Provides methods for interacting with the data inside the database.
     """
 
+    def __init__(self):
+        self.logs = []
+
     def handle_sync(self, request, list_of_statfiles):
-        experiment_names = self.get_all_experiment_names(request)
-        configurations = self.get_all_configurations(request)
+        """
+        Inserts the required data into the database upon user syncing.
+        
+        :param request: The Pyramid request object
+        :type request: Request
+        
+        :param list_of_statfiles: A list containing dictionaries to insert into database
+        :type list_of_statfiles: list
+        
+        :return: A log of what happened
+        :type: list
+        """
 
-        conf_pairs = []
-        for config in configurations:
-            conf_pairs.append([config.get('_conf_name'), config.get('_exp_name')])
+        for statfile in list_of_statfiles:
+            
+            # For each insert, we need to check for duplicate entries in the database
+            
+            experiment_names = self.get_all_experiment_names(request)
+            configurations = self.get_all_configurations(request)
 
-        for parsed_statfile in list_of_statfiles:
-            if parsed_statfile.get('_exp_name') not in experiment_names:
-                exp_metadata = {'_exp_name': parsed_statfile.get('_exp_name'),
-                                '_exp_owner': parsed_statfile.get('_sim_owner'),
-                                '_exp_date': parsed_statfile.get('_sim_date')}
+            conf_pairs = []
+            conf_identity = [statfile.get('_conf_name'), statfile.get('_exp_name')]
+            
+            for config in configurations:
+                conf_pairs.append([config.get('_conf_name'), config.get('_exp_name')])
+            
+            # If this statfile is from a new experiment, create the experiment in the database
+
+            if statfile.get('_exp_name') not in experiment_names:
+                exp_metadata = {'_exp_name': statfile.get('_exp_name'),
+                                '_exp_owner': statfile.get('_sim_owner'),
+                                '_exp_date': statfile.get('_sim_date')}
                 self.insert_experiment(request, exp_metadata)
-            conf_identity = [parsed_statfile.get('_conf_name'), parsed_statfile.get('_exp_name')]
+                
+            # If this statfile is from a new configuration, create the configuration in the database           
+
             if conf_identity not in conf_pairs:
-                conf_metadata = {'_conf_name': parsed_statfile.get('_conf_name'),
-                                 '_conf_owner': parsed_statfile.get('_sim_owner'),
-                                 '_conf_date': parsed_statfile.get('_sim_date'),
-                                 '_exp_name': parsed_statfile.get('_exp_name')}
+                conf_metadata = {'_conf_name': statfile.get('_conf_name'),
+                                 '_conf_owner': statfile.get('_sim_owner'),
+                                 '_conf_date': statfile.get('_sim_date'),
+                                 '_exp_name': statfile.get('_exp_name')}
                 self.insert_configuration(request, conf_metadata)
-            self.insert_application(request, parsed_statfile)
+            
+            # Finally, insert the parsed statfile into the database
+            
+            self.insert_application(request, statfile)
+
+        if self.logs is None:
+            return []
+        else:
+            return self.logs
 
     @staticmethod
-    def insert_application(request, document_data):
+    def get(request, collection, selection={}, projection=None):
+        return request.db[collection].find(selection, projection=projection)
+
+    def insert_application(self, request, document_data):
+        self.logs.append("Inserting application with name " + document_data.get('_sim_name'))
         return request.db['applications'].insert_one(document_data).inserted_id
 
-    @staticmethod
-    def insert_configuration(request, document_data):
+    def insert_configuration(self, request, document_data):
+        self.logs.append("Inserting configuration with name " + document_data.get('_conf_name'))
         return request.db['configurations'].insert_one(document_data).inserted_id
 
-    @staticmethod
-    def insert_experiment(request, document_data):
+    def insert_experiment(self, request, document_data):
+        self.logs.append("Inserting experiment with name " + document_data.get('_exp_name'))
         return request.db['experiments'].insert_one(document_data).inserted_id
 
     @staticmethod
@@ -94,18 +131,5 @@ class DatabaseActions:
 
         return names
 
-    @staticmethod
-    def get_all_applications(request):
-        return request.db['applications'].find({}, projection=['_sim_name', '_sim_owner', '_sim_date',
-                                                               '_exp_name', '_conf_name'])
-
-    @staticmethod
-    def get_all_configurations(request):
-        return request.db['configurations'].find({}, projection=['_conf_name', '_conf_owner', '_conf_date',
-                                                                 '_exp_name'])
-
-    @staticmethod
-    def get_all_experiments(request):
-        return request.db['experiments'].find({}, projection=['_exp_name', '_exp_owner', '_exp_date'])
 
 

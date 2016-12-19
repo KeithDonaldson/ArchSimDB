@@ -29,17 +29,16 @@ def globals_factory(event):
 @view_config(route_name='home', renderer='templates/index.pt')
 def home(request):
     info = DatabaseInfo()
-    collections = info.get_all_collection_names(request)
     exp_cnt = info.get_experiment_count(request)
     conf_cnt = info.get_configuration_count(request)
     app_cnt = info.get_applications_count(request)
 
-    return {'collections': collections, 'exp_cnt': exp_cnt, 'conf_cnt': conf_cnt, 'app_cnt': app_cnt}
+    return {'exp_cnt': exp_cnt, 'conf_cnt': conf_cnt, 'app_cnt': app_cnt}
 
 
 @view_config(route_name='upload', renderer='templates/upload.pt')
 def upload(request):
-    if '_sim_name' in request.POST:
+    if request.method == 'POST':
         metadata = {}
         for key, val in request.POST.items():
             if key != 'statfile':
@@ -78,7 +77,7 @@ def add_conf(request):
     :return:
     """
 
-    if '_conf_name' in request.POST:
+    if request.method == 'POST':
         conf_data = {}
         for key, val in request.POST.items():
             if key == '_conf_date':
@@ -97,7 +96,8 @@ def add_conf(request):
 @view_config(route_name='applications', renderer='templates/applications.pt')
 def applications(request):
     db_actions = DatabaseActions()
-    all_applications = db_actions.get_all_applications(request)
+    all_applications = db_actions.get(request, 'applications', projection=['_sim_name', '_sim_owner', '_sim_date',
+                                                                           '_exp_name', '_conf_name'])
     app_dict = [dict(pn) for pn in all_applications]
 
     for app in app_dict:
@@ -111,7 +111,7 @@ def applications(request):
 @view_config(route_name='configurations', renderer='templates/configurations.pt')
 def configurations(request):
     db_actions = DatabaseActions()
-    all_configurations = db_actions.get_all_configurations(request)
+    all_configurations = db_actions.get(request, 'configurations')
     conf_dict = [dict(pn) for pn in all_configurations]
 
     for conf in conf_dict:
@@ -125,7 +125,7 @@ def configurations(request):
 @view_config(route_name='experiments', renderer='templates/experiments.pt')
 def experiments(request):
     db_actions = DatabaseActions()
-    all_experiments = db_actions.get_all_experiments(request)
+    all_experiments = db_actions.get(request, 'experiments')
     exp_dict = [dict(pn) for pn in all_experiments]
 
     for exp in exp_dict:
@@ -143,12 +143,70 @@ def flot(request):
 
 @view_config(route_name='sync', renderer='templates/sync.pt')
 def sync(request):
-    scanner = Scanner()
+    if request.method == 'POST':
+        scanner = Scanner()
+        db_actions = DatabaseActions()
+        scanning_results = scanner.scanner()
+
+        list_of_inserts = scanning_results.get('statfile_data')
+        scanner_logs = scanning_results.get('logs')
+        dbaccess_logs = db_actions.handle_sync(request, list_of_inserts)
+
+        logs = scanner_logs + dbaccess_logs
+
+        return {'inserted_no': len(list_of_inserts), 'logs': logs}
+    else:
+        return {}
+
+
+@view_config(route_name='query', renderer='templates/query.pt')
+def query(request):
     db_actions = DatabaseActions()
-    scanning_results = scanner.scanner()
+    all_experiments = db_actions.get(request, 'experiments')
+    exp_dict = [dict(pn) for pn in all_experiments]
 
-    list_of_inserts = scanning_results.get('statfile_data')
-    logs = scanning_results.get('logs')
-    db_actions.handle_sync(request, list_of_inserts)
+    for exp in exp_dict:
+        for key, val in exp.items():
+            if key == '_exp_date':
+                exp[key] = val.strftime("%Y-%m-%d")
 
-    return {'inserted_no': len(list_of_inserts), 'logs': logs}
+    return {'experiments': dumps(exp_dict)}
+
+
+# --------------------- #
+# POST AND GET REQUESTS #
+# --------------------- #
+
+@view_config(route_name='get/configurations', renderer='json')
+def get_configurations(request):
+    if '_exp_name' in request.POST:
+        filters = {'_exp_name': request.POST.get('_exp_name')}
+        db_actions = DatabaseActions
+
+        confs = db_actions.get(request, 'configurations', selection=filters)
+        conf_dict = [dict(pn) for pn in confs]
+
+        for conf in conf_dict:
+            for key, val in conf.items():
+                if key == '_conf_date':
+                    conf[key] = val.strftime("%Y-%m-%d")
+
+        return dumps(conf_dict)
+
+
+@view_config(route_name='get/applications', renderer='json')
+def get_applications(request):
+    if '_conf_name' in request.POST:
+        filters = {'_conf_name': request.POST.get('_conf_name')}
+        db_actions = DatabaseActions
+
+        apps = db_actions.get(request, 'applications', selection=filters,
+                              projection=['_sim_name', '_sim_owner', '_sim_date', '_exp_name', '_conf_name'])
+        app_dict = [dict(pn) for pn in apps]
+
+        for app in app_dict:
+            for key, val in app.items():
+                if key == '_sim_date':
+                    app[key] = val.strftime("%Y-%m-%d")
+
+        return dumps(app_dict)

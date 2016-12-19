@@ -5,7 +5,7 @@ import logging
 class Reader:
 
     @staticmethod
-    def load(input_filepath, logging_level="logging.DEBUG"):
+    def load(input_filepath, logging_level="logging.WARNING"):
         """
         Load, read, and parse a file.
 
@@ -21,7 +21,7 @@ class Reader:
 
         # Initialise logging and the Parser object
 
-        logging.basicConfig(filename='reader.log', filemode='w', level=logging_level)
+        logging.basicConfig(filemode='w', level=logging_level)
         parser = Parser()
 
         # Open the given file in read mode, split the lines, and feed that to the parser.
@@ -273,10 +273,3 @@ class Parser:
 
 class ParserException(Exception):
     pass
-
-
-if __name__ == '__main__':
-    reader = Reader()
-    data = reader.load('/home/keith/Downloads/tmp_pernode')
-
-    json.dumps(data, sort_keys=True, indent=4)

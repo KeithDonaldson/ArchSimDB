@@ -109,20 +109,6 @@
                             </ul>
                         </li>
                         <li>
-                            <a href="#"><i class="fa fa-plus fa-fw"></i> Insert<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="/add/application"><i class="fa fa-upload fa-fw"></i> Upload Statfile</a>
-                                </li>
-                                <li>
-                                    <a href="/add/experiment"><i class="fa fa-plus fa-fw"></i> Add Experiment</a>
-                                </li>
-                                <li>
-                                    <a href="/add/configuration"><i class="fa fa-plus fa-fw"></i> Add Configuration</a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
                             <a href="/sync"><i class="fa fa-refresh fa-fw"></i> Sync</a>
                         </li>
                     </ul>

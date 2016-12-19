@@ -38,6 +38,9 @@ def main(global_config, **settings):
     config.add_route('experiments', '/experiments')
     config.add_route('flot', '/flot')
     config.add_route('sync', '/sync')
+    config.add_route('query', '/query')
+    config.add_route('get/configurations', '/get/configurations')
+    config.add_route('get/applications', '/get/applications')
 
     config.scan()
     return config.make_wsgi_app()

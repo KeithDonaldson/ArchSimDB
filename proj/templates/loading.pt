@@ -1,9 +1,0 @@
-<metal:macro use-macro="master">
-    <metal:slot fill-slot="body">
-        <div class="row">
-            <div class="col-md-2 col-md-offset-5" style="margin-top: 100px;">
-                <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
-            </div>
-        </div>
-    </metal:slot>
-</metal:macro>
