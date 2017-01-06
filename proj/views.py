@@ -173,6 +173,21 @@ def query(request):
     return {'experiments': dumps(exp_dict)}
 
 
+@view_config(route_name='app_info', renderer='templates/data.pt')
+def app_info(request):
+    db_actions = DatabaseActions()
+    _exp_name = request.matchdict['_exp_name']
+    _conf_name = request.matchdict['_conf_name']
+    _sim_name = request.matchdict['_sim_name']
+
+    raw_data = db_actions.get(request, 'applications', {'_exp_name': _exp_name, '_conf_name': _conf_name,
+                                                        '_sim_name': _sim_name})
+
+    data = [dict(pn) for pn in raw_data]
+
+    return {'data': dumps(data)}
+
+
 # --------------------- #
 # POST AND GET REQUESTS #
 # --------------------- #

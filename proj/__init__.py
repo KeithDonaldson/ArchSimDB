@@ -41,6 +41,7 @@ def main(global_config, **settings):
     config.add_route('query', '/query')
     config.add_route('get/configurations', '/get/configurations')
     config.add_route('get/applications', '/get/applications')
+    config.add_route('app_info', '/data/{_exp_name}/{_conf_name}/{_sim_name}')
 
     config.scan()
     return config.make_wsgi_app()
