@@ -15,17 +15,17 @@ class Scanner:
         self.checksums = {}
         self.list_of_all_statfile_data = []
         self.logs = []
+        self.working_path = "/home/keith/Documents/statfiles/s1319624/"
 
     def scanner(self):
-        working_path = "/home/keith/Documents/statfiles/s1319624/"
         initiated = False
     
         logger = logging.getLogger("sync")
     
-        if working_path[-1] == '/':
-            working_path = working_path[:-1]
+        if self.working_path[-1] == '/':
+            self.working_path = self.working_path[:-1]
     
-        for dirpath, dirnames, filenames in os.walk(working_path):
+        for dirpath, dirnames, filenames in os.walk(self.working_path):
             if not initiated:
                 self.statfile_metadata['_sim_owner'] = dirpath.split('/')[-1]
                 meta_filepath = dirpath + '/.archsimdb_tracking_data'
@@ -51,6 +51,12 @@ class Scanner:
                 if file != ".archsimdb_tracking_data":
                     filepath = dirpath + '/' + file
                     statfile = open(filepath, 'rb')
+
+                    if self.working_path.split('/') != filepath.split('/')[:-3]:
+                        self.logs.append("Found a file not in the correct directory path "
+                                         "(i.e. not in user/experiment/configuration/) at " + filepath)
+                        continue  # The file is not of the form working_path/experiment/configuration, abort
+
                     if filepath not in self.checksums:
                         meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
                         self.prepare_input(filepath)

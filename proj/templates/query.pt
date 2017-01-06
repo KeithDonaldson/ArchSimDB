@@ -35,33 +35,36 @@
 
             function getConfs(_exp_name) {
                 $.post( "get/configurations", { '_exp_name': _exp_name }, function( data ) {
-                    var parsed_data = JSON.parse(data)
-                    $("#configurations").slideDown("slow", function() {});
+                    var parsed_data = JSON.parse(data);
                     $('#configuration_table').DataTable({
+                        responsive: true,
+                        destroy: true,
                         data: parsed_data,
                         columns: [
                             { data: '_conf_name',
                               'render': function (data) {
-                                  return '<a onclick="getApps(\'' + data + '\')" style="cursor: pointer">' + data + '</a>';
+                                  return '<a onclick="getApps(\'' + data + '\', \'' + _exp_name + '\')" style="cursor: pointer">' + data + '</a>';
                               }
                             },
                             { data: '_conf_owner' },
                             { data: '_exp_name' },
                             { data: '_conf_date' }
-                        ],
-                        responsive: true
+                        ]
                     });
-                    $("#experiments").css("pointer-events", "none");
-                    $("#experiments").css("opacity", "0.4");
-                    $("#conf_title").text("Configurations of " + _exp_name)
+                    $("#conf_title").text("Configurations of " + _exp_name);
+                    $("#confrow").show();
+                    $("#exprow").hide();
+                    $("#exprow_change").show();
+                    $("#exprow_change h2").replaceWith("<h2>Experiment: " + _exp_name + ". <a onclick='change(\"experiments\")' style='cursor: pointer;'>Change</a></h2>")
                 });
             };
 
-            function getApps(_conf_name) {
-                $.post( "get/applications", { '_conf_name': _conf_name }, function( data ) {
-                    var parsed_data = JSON.parse(data)
-                    $("#applications").slideDown("slow", function() {});
+            function getApps(_conf_name, _exp_name) {
+                $.post( "get/applications", { '_conf_name': _conf_name, '_exp_name': _exp_name }, function( data ) {
+                    var parsed_data = JSON.parse(data);
                     $('#application_table').DataTable({
+                        responsive: true,
+                        destroy: true,
                         data: parsed_data,
                         columns: [
                             { data: '_sim_name' },
@@ -69,14 +72,29 @@
                             { data: '_conf_name' },
                             { data: '_exp_name' },
                             { data: '_sim_date' }
-                        ],
-                        responsive: true
+                        ]
                     });
-                    $("#configurations").css("pointer-events", "none");
-                    $("#configurations").css("opacity", "0.4");
-                    $("#app_title").text("Applications of " + _conf_name)
+                    $("#app_title").text("Applications of " + _conf_name);
+                    $("#approw").show();
+                    $("#confrow").hide();
+                    $("#confrow_change").show();
+                    $("#confrow_change h2").replaceWith("<h2>Configuration: " + _conf_name + ". <a onclick='change(\"configurations\")' style='cursor: pointer;'>Change</a></h2>")
                 });
             };
+
+            function change(item) {
+                if (item == "configurations") {
+                    $("#approw").hide();
+                    $("#confrow_change").hide();
+                    $("#confrow").show();
+                } else if (item == "experiments") {
+                    $("#confrow").hide();
+                    $("#approw").hide();
+                    $("#exprow_change").hide();
+                    $("#confrow_change").hide();
+                    $("#exprow").show();
+                }
+            }
         </script>
     </metal:slot>
 
@@ -88,53 +106,66 @@
             <!-- /.col-lg-12 -->
         </div>
         <!-- /.row -->
-        <div class="row" id="experiments">
+        <div id="exprow_change" style="display: none;">
+            <h2></h2>
+        </div>
+        <div class="row" id="exprow">
             <div class="col-lg-12">
                 <h2>Experiments</h2>
-                <table width="100%" class="table table-striped table-bordered table-hover" id="experiment_table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                </table>
+                <div id="experiments">
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="experiment_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
             <!-- /.col-lg-12 -->
         </div>
-        <div class="row" id="configurations" style="display: none;">
+        <div id="confrow_change" style="display: none;">
+            <hr>
+            <h2></h2>
+        </div>
+        <div class="row" id="confrow" style="display: none;">
             <div class="col-lg-12">
-                <hr />
+                <hr>
                 <h2 id="conf_title">Configurations</h2>
-                <table width="100%" class="table table-striped table-bordered table-hover" id="configuration_table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>Experiment Name</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                </table>
+                <div id="configurations" >
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="configuration_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Experiment Name</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
             <!-- /.col-lg-12 -->
         </div>
-        <div class="row" id="applications" style="display: none;">
+        <div class="row" id="approw" style="display: none;">
             <div class="col-lg-12">
-                <hr />
-                <h2 id="app_title">Configurations</h2>
-                <table width="100%" class="table table-striped table-bordered table-hover" id="application_table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Owner</th>
-                            <th>Configuration Name</th>
-                            <th>Experiment Name</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                </table>
+                <hr>
+                <h2 id="app_title">Applications</h2>
+                <div id="applications">
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="application_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Configuration Name</th>
+                                <th>Experiment Name</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
             </div>
             <!-- /.col-lg-12 -->
         </div>

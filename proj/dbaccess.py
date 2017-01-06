@@ -59,7 +59,7 @@ class DatabaseActions:
             # For each insert, we need to check for duplicate entries in the database
             
             experiment_names = self.get_all_experiment_names(request)
-            configurations = self.get_all_configurations(request)
+            configurations = self.get(request, 'configurations')
 
             conf_pairs = []
             conf_identity = [statfile.get('_conf_name'), statfile.get('_exp_name')]

@@ -197,7 +197,7 @@ def get_configurations(request):
 @view_config(route_name='get/applications', renderer='json')
 def get_applications(request):
     if '_conf_name' in request.POST:
-        filters = {'_conf_name': request.POST.get('_conf_name')}
+        filters = {'_conf_name': request.POST.get('_conf_name'), '_exp_name': request.POST.get('_exp_name')}
         db_actions = DatabaseActions
 
         apps = db_actions.get(request, 'applications', selection=filters,
