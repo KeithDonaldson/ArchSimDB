@@ -110,7 +110,7 @@ class DatabaseActions:
         return request.db['experiments'].insert_one(document_data).inserted_id
 
     @staticmethod
-    def find_application_by_id(request, document_id):
+    def get_application_by_id(request, document_id):
         return request.db['applications'].find_one({'_id': document_id})
 
     @staticmethod
@@ -131,5 +131,27 @@ class DatabaseActions:
 
         return names
 
+    def get_hierarchy(self, request):
+        apps = self.get(request, 'applications', projection=['_sim_name', '_conf_name', '_exp_name'])
+        app_dict = [dict(pn) for pn in apps]
 
+        hierarchy = {}
+
+        for app in app_dict:
+            _exp_name = app.get('_exp_name')
+            _conf_name = app.get('_conf_name')
+            _sim_name = app.get('_sim_name')
+
+            if _exp_name in hierarchy:
+                if _conf_name in hierarchy[_exp_name]:
+                    hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
+                else:
+                    hierarchy[_exp_name][_conf_name] = {}
+                    hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
+            else:
+                hierarchy[_exp_name] = {}
+                hierarchy[_exp_name][_conf_name] = {}
+                hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
+
+        return hierarchy
 

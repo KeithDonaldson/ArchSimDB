@@ -1,6 +1,6 @@
 <metal:macro use-macro="master">
     <metal:slot fill-slot="title">
-        <title>Data Dump for <span tal:replace="_sim_name"/>... | ArchSim DB</title>
+        <title>Compare Results | ArchSim DB</title>
     </metal:slot>
 
     <metal:slot fill-slot="head">
@@ -15,30 +15,45 @@
         <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
-        <script type="text/javascript" id="data" data="${data}">
-            var data = JSON.parse($("#data").attr("data"))[0];
-            var listdata = []
-            for (var key in data) {
-                var val = data[key];
-                if (key[0] != '_') {
-                    if (typeof val == "object") {
-                        listdata.push({'key': key, 'value': JSON.stringify(val)})
-                    } else {
-                        listdata.push({'key': key, 'value': val})
-                    }
-                }
+        <script type="text/javascript" id="data" data="${results}">
+            var data = JSON.parse($("#data").attr("data").replace(/'/g, '"'));
+
+            var columns = "[{ \"data\": \"field\"}, ";
+
+            var tableHeader = $("#tableHeader");
+            for (var i = 0; i < data.apps.length; i++) {
+                tableHeader.append("<th>" + data.apps[i] + "</th>");
+                columns += "{ \"data\": \"" + data.apps[i] + "\" },";
             }
-            var parsed_data = { data: listdata };
-            console.log(parsed_data);
+
+            columns = columns.slice(0, columns.length -1);
+            columns += "]";
+            columns = JSON.parse(columns)
+
             $(document).ready(function() {
                 $('#data_table').DataTable({
-                    data: parsed_data.data,
-                    columns: [
-                        { data: 'key' },
-                        { data: 'value' }
-                    ],
+                    data: data.data,
+                    columns: columns,
                     responsive: true,
-                    pageLength: 25
+                    pageLength: 25,
+                    rowCallback: function(row, data, index) {
+                        if (data.length === 0) {
+                            return -1;
+                        }
+
+                        var newdata = Object.keys( data ).map(function ( key ) { return data[key]; });
+                        var max = newdata[1];
+                        var maxIndex = 1;
+
+                        for (var i = 1; i < newdata.length; i++) {
+                            if (newdata[i] > max) {
+                                maxIndex = i;
+                                max = newdata[i];
+                            }
+                        }
+
+                        $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
+                    }
                 });
             });
         </script>
@@ -47,7 +62,7 @@
     <metal:slot fill-slot="body">
         <div class="row">
             <div class="col-lg-12">
-                <h1 class="page-header">Data Dump for <span tal:replace="_sim_name"/>...</h1>
+                <h1 class="page-header">Compare Results</h1>
             </div>
             <!-- /.col-lg-12 -->
         </div>
@@ -56,9 +71,8 @@
             <div class="col-lg-12">
                 <table width="100%" class="table table-striped table-bordered table-hover" id="data_table">
                     <thead>
-                        <tr>
-                            <th>Key</th>
-                            <th>Value</th>
+                        <tr id="tableHeader">
+                            <th>Field</th>
                         </tr>
                     </thead>
                 </table>

@@ -2,18 +2,14 @@ from pyramid.view import view_config
 from pyramid.renderers import get_renderer
 from pyramid.interfaces import IBeforeRender
 from pyramid.events import subscriber
-from pyramid.events import NewRequest
-from pyramid.httpexceptions import HTTPFound
 from .reader import *
 from .dbaccess import *
 from .scanner import *
-import os
-import uuid
+from bson.json_util import dumps
+from collections import OrderedDict
+
 import logging
 log = logging.getLogger(__name__)
-import shutil
-from bson.json_util import dumps
-from datetime import datetime
 
 # --------------------------- #
 # --- Human-visible pages --- #
@@ -34,63 +30,6 @@ def home(request):
     app_cnt = info.get_applications_count(request)
 
     return {'exp_cnt': exp_cnt, 'conf_cnt': conf_cnt, 'app_cnt': app_cnt}
-
-
-@view_config(route_name='upload', renderer='templates/upload.pt')
-def upload(request):
-    if request.method == 'POST':
-        metadata = {}
-        for key, val in request.POST.items():
-            if key != 'statfile':
-                if key == '_sim_date':
-                    metadata[key] = datetime.strptime(val, "%Y-%m-%d")
-                else:
-                    metadata[key] = val
-
-        input_file = request.POST['statfile'].file
-        file_path = os.path.join('/tmp', '%s.txt' % uuid.uuid4())
-        temp_file_path = file_path + '~'
-        input_file.seek(0)
-        with open(temp_file_path, 'wb') as output_file:
-            shutil.copyfileobj(input_file, output_file)
-        os.rename(temp_file_path, file_path)
-
-        file_reader = Reader
-        db_actions = DatabaseActions()
-
-        parsed_data = file_reader.load(file_path)
-
-        for key, val in metadata.items():
-            parsed_data[key] = val
-
-        inserted_id = db_actions.insert_application(request, parsed_data)
-
-        return {'inserted_id': inserted_id}
-    else:
-        return {}
-
-
-@view_config(route_name='add/configuration', renderer='templates/insert_conf.pt')
-def add_conf(request):
-    """
-    :param request:
-    :return:
-    """
-
-    if request.method == 'POST':
-        conf_data = {}
-        for key, val in request.POST.items():
-            if key == '_conf_date':
-                conf_data[key] = datetime.strptime(val, "%Y-%m-%d")
-            else:
-                conf_data[key] = val
-
-        db_actions = DatabaseActions()
-        inserted_id = db_actions.insert_configuration(request, conf_data)
-
-        return {'inserted_id': inserted_id}
-    else:
-        return {}
 
 
 @view_config(route_name='applications', renderer='templates/applications.pt')
@@ -185,7 +124,50 @@ def app_info(request):
 
     data = [dict(pn) for pn in raw_data]
 
-    return {'data': dumps(data)}
+    return {'data': dumps(data), '_sim_name': data[0].get('_sim_name')[:20]}
+
+
+@view_config(route_name='compare', renderer='templates/compare.pt')
+def compare(request):
+    db_actions = DatabaseActions()
+    data_hierarchy = db_actions.get_hierarchy(request)
+
+    return {'hierarchy': json.dumps(data_hierarchy, sort_keys=True)}
+
+
+@view_config(route_name='compare_results', renderer='templates/compare_results.pt')
+def compare_results(request):
+    if 'fields[]' in request.POST:
+        fields = request.POST.getall('fields[]')
+        apps = request.POST.getall('apps[]')
+
+        db_actions = DatabaseActions()
+        results = {}
+        app_names = []
+
+        for app in apps:
+            _exp_name, _conf_name, _sim_name = app.split('/')[:3]
+            app_names.append(_sim_name[:15])
+            filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
+            result = db_actions.get(request, 'applications', selection=filters, projection=fields)
+            results[_sim_name] = ([dict(pn) for pn in result][0])
+
+        data = []
+
+        for field in fields:
+            field_data = OrderedDict({'field': field})
+            for key, val in results.items():
+                if val.get(field) is None:
+                    field_data[key[:15]] = "-"
+                else:
+                    field_data[key[:15]] = val.get(field)
+            data.append(field_data)
+
+        results = {'data': data, 'apps': app_names}
+
+        return {'results': dumps(results)}
+    else:
+        return {'results': None}
 
 
 # --------------------- #
@@ -225,3 +207,26 @@ def get_applications(request):
                     app[key] = val.strftime("%Y-%m-%d")
 
         return dumps(app_dict)
+
+
+@view_config(route_name='get/fields', renderer='json')
+def get_fields(request):
+    for key in request.POST.keys():
+        print(key)
+    if 'apps[]' in request.POST:
+        fields = set()
+        apps = request.POST.getall('apps[]')
+        db_actions = DatabaseActions
+
+        for app in apps:
+            _exp_name, _conf_name, _sim_name = app.split('/')[:3]
+            filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
+            result = db_actions.get(request, 'applications', selection=filters)
+            results = [dict(pn) for pn in result]
+
+            for key, val in results[0].items():
+                if key[0] != '_':
+                    fields.add(key)
+
+        return {'fields': sorted(list(fields))}
+

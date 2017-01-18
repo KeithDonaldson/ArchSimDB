@@ -67,7 +67,11 @@
                         destroy: true,
                         data: parsed_data,
                         columns: [
-                            { data: '_sim_name' },
+                            { data: '_sim_name',
+                              'render': function (data) {
+                                  return '<a href="data/' + _exp_name + '/' + _conf_name + '/' + data + '">' + data + '</a>';
+                              }
+                            },
                             { data: '_sim_owner' },
                             { data: '_conf_name' },
                             { data: '_exp_name' },
