@@ -143,27 +143,32 @@ def compare_results(request):
 
         db_actions = DatabaseActions()
         results = {}
-        app_names = []
+        workloads = set()
+        configs = set()
 
         for app in apps:
             _exp_name, _conf_name, _sim_name = app.split('/')[:3]
-            app_names.append(_sim_name[:15])
+            workloads.add(_sim_name)
+            configs.add(_conf_name)
             filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
             result = db_actions.get(request, 'applications', selection=filters, projection=fields)
-            results[_sim_name] = ([dict(pn) for pn in result][0])
+            results[app] = OrderedDict(sorted(result[0].items()))
 
-        data = []
+        data = {}
+
+        print(results)
 
         for field in fields:
-            field_data = OrderedDict({'field': field})
-            for key, val in results.items():
-                if val.get(field) is None:
-                    field_data[key[:15]] = "-"
-                else:
-                    field_data[key[:15]] = val.get(field)
-            data.append(field_data)
+            rows = []
+            for workload in workloads:
+                row = [workload[:20]]
+                for result in results:
+                    if result.split('/')[:3][2] == workload:
+                        row.append(results.get(result).get(field))
+                rows.append(row)
+            data[field] = rows
 
-        results = {'data': data, 'apps': app_names}
+        results = {'data': data, 'configs': configs, 'stats': fields}
 
         return {'results': dumps(results)}
     else:
@@ -207,6 +212,15 @@ def get_applications(request):
                     app[key] = val.strftime("%Y-%m-%d")
 
         return dumps(app_dict)
+
+
+@view_config(route_name='get/experiments', renderer='json')
+def get_experiments(request):
+    db_actions = DatabaseActions()
+    exps = db_actions.get(request, 'experiments')
+    exp_dict = [dict(pn) for pn in exps]
+
+    return dumps(exp_dict)
 
 
 @view_config(route_name='get/fields', renderer='json')

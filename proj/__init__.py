@@ -41,6 +41,7 @@ def main(global_config, **settings):
     config.add_route('query', '/query')
     config.add_route('get/configurations', '/get/configurations')
     config.add_route('get/applications', '/get/applications')
+    config.add_route('get/experiments', '/get/experiments')
     config.add_route('get/fields', '/get/fields')
     config.add_route('compare', '/compare')
     config.add_route('compare_results', '/compare/results')
