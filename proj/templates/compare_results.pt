@@ -15,12 +15,16 @@
         <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
+        <!-- Flot Charts JavaScript -->
+        <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.categories.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.orderBars.js')}"></script>
+
         <script type="text/javascript" id="data" data="${results}">
 
             // Initial data parsing, done before any settings
 
             var data = JSON.parse($("#data").attr("data").replace(/'/g, '"'));
-            console.log(data);
 
             var columns = "[{ \"title\": \"Workload\"}, ";
 
@@ -39,7 +43,7 @@
             function updateTables(data) {
                 $('#tables').empty();
                 for (var stat in data.stats) {
-                    $('#tables').append($('<h2>' + data.stats[stat] + '</h2>'));
+                    $('#tables').append($('<h4>' + data.stats[stat] + '</h4>'));
                     $('#tables').append($('<table/>', {
                         id: 'table_' + stat,
                         'class': 'table table-striped table-bordered table-hover',
@@ -51,6 +55,13 @@
                         data: data.data[data.stats[stat]],
                         columns: columns,
                         responsive: true,
+                        paging: false,
+                        info: false,
+                        searching: false,
+                        columnDefs: [
+                            { "orderable": false, "targets": 0 }
+                        ],
+                        aaSorting: [],
                         pageLength: 25,
                         rowCallback: function (row, data, index) {
                             if (data.length === 0) {
@@ -62,15 +73,21 @@
                             });
                             var max = newdata[1];
                             var maxIndex = 1;
+                            var equalCounter = 1;
 
                             for (var i = 1; i < newdata.length; i++) {
-                                if (newdata[i] > max) {
+                                if (newdata[i] >= max) {
+                                    if (newdata[i] === max) {
+                                        equalCounter += 1;
+                                    }
                                     maxIndex = i;
                                     max = newdata[i];
                                 }
                             }
 
-                            $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
+                            if (equalCounter != newdata.length) {
+                                $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
+                            }
                         }
                     });
                 }
@@ -78,12 +95,14 @@
 
             // Settings Menu
 
+            var data_after_settings = JSON.parse(JSON.stringify(data));
+
             for (var config in data.configs) {
                 $('#baseline').append($('<option>', {value:config, text:data.configs[config]}));
             }
 
             $('#baseline').change(function() {
-                var data_after_settings = JSON.parse(JSON.stringify(data));
+                data_after_settings = JSON.parse(JSON.stringify(data));
                 var selected = parseInt($('#baseline').val())+1;
                 if (selected != 0) {
                     for (var key in data_after_settings.data) {
@@ -91,7 +110,7 @@
                         for (var workload in workloads) {
                             var baseline = workloads[workload][selected];
                             for (var i = 1; i < workloads[workload].length; i++) {
-                                if (i != selected) {
+                                if (i != selected && baseline != null && workloads[workload][i] != null) {
                                     workloads[workload][i] = parseInt(workloads[workload][i])/baseline;
                                 }
                             }
@@ -103,9 +122,11 @@
 
             $("#download_as_csv").click(function(){
                 var csv;
-                for (var key in data.data) {
-                    csv += key + "\n";
-                    data.data[key].forEach(function(infoArray, index){
+                for (var key in data_after_settings.data) {
+                    csv += key + ",";
+                    var headings = data_after_settings.configs.join(",");
+                    csv += headings + "\n";
+                    data_after_settings.data[key].forEach(function(infoArray, index){
                         dataString = infoArray.join(",");
                         csv += dataString+ "\n";
                     });
@@ -123,6 +144,60 @@
 
                 downloadFile('compared_data.csv', 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv));
             });
+
+            function createChart(stat) {
+                var chart_list = [];
+                var workload_list = [];
+                for (var workload in data.data[stat]) {
+                    var workload_data = data.data[stat][workload];
+                    var values = [];
+                    for (var i = 1; i < workload_data.length; i++) {
+                        var tuple = [data.configs[i-1], workload_data[i]];
+                        values.push(tuple);
+                        console.log("in");
+                    }
+                    workload_list.push(workload_data[0]);
+                    chart_list.push(values.slice(0,2));
+                    console.log(values)
+                }
+
+                var config_list = []
+
+                for (var x = 0; x < workload_list.length; x++) {
+                    var config = {
+                        label: workload_list[x],
+                        data: chart_list[x]
+                    }
+                    config_list.push(config)
+                }
+
+                console.log(config_list)
+
+                var chart_config =  {
+                    series: {
+                        bars: {
+                            show: true,
+                            barWidth: 1/(config_list.length+1),
+                            lineWidth: 0,
+                            order: 1,
+                            fillColor: {
+                                colors: [{
+                                    opacity: 1
+                                }, {
+                                    opacity: 0.7
+                                }]
+                            }
+                        }
+                    },
+                    xaxis: {
+                        mode: "categories",
+                        tickLength: 0
+                    },
+                    grid: { hoverable: true, clickable: true }
+                }
+
+                $.plot("#bar-chart", config_list, chart_config);
+            }
         </script>
     </metal:slot>
 
@@ -147,7 +222,10 @@
                             </select>
                         </div>
                         <div class="col-lg-4">
-                            <button id="download_as_csv" onclick="downloadAsCSV()" class="btn btn-primary btn-lg btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
+                            <button id="create_chart" onclick="createChart('00-feeder-CASOps')" class="btn btn-primary btn-lg btn-block"><i class="fa fa-download" aria-hidden="true"></i> Create Chart</button>
+                        </div>
+                        <div class="col-lg-4">
+                            <button id="download_as_csv" class="btn btn-primary btn-lg btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
                         </div>
                     </div>
                 </div>
@@ -156,6 +234,11 @@
 
         <div class="row">
             <div id="tables" class="col-lg-12">
+            </div>
+        </div>
+         <div class="row" id="charts">
+             <div class="flot-chart">
+                <div class="flot-chart-content" id="bar-chart"></div>
             </div>
         </div>
     </metal:slot>

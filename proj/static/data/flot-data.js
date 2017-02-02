@@ -1201,42 +1201,67 @@ $(function() {
 
 //Flot Bar Chart
 
-$(function() {
+$(function () {
 
-    var barOptions = {
+    var data1 = [
+        ["exp2/conf1", 417246],
+        ["exp2/conf2", 317246],
+        ["exp2/conf3", 613451],
+    ];
+
+    var data2 = [
+        ["exp2/conf1", 664810],
+        ["exp2/conf2", 364810],
+        ["exp2/conf3", 565535],
+    ];
+
+    var data3 = [
+        ["exp2/conf1", 564810],
+        ["exp2/conf2", 664810],
+        ["exp2/conf3", 365535],
+    ];
+
+    var data4 = [
+        ["exp2/conf1", 564810],
+        ["exp2/conf2", 664810],
+        ["exp2/conf3", 365535],
+    ];
+
+     var chart_config =  {
         series: {
             bars: {
                 show: true,
-                barWidth: 43200000
+                barWidth: 1/5,
+                lineWidth: 0,
+                order: 1,
+                fillColor: {
+                    colors: [{
+                        opacity: 1
+                    }, {
+                        opacity: 0.7
+                    }]
+                }
             }
         },
         xaxis: {
-            mode: "time",
-            timeformat: "%m/%d",
-            minTickSize: [1, "day"]
+            mode: "categories",
+            tickLength: 0
         },
-        grid: {
-            hoverable: true
-        },
-        legend: {
-            show: false
-        },
-        tooltip: true,
-        tooltipOpts: {
-            content: "x: %x, y: %y"
-        }
-    };
-    var barData = {
-        label: "bar",
-        data: [
-            [1354521600000, 1000],
-            [1355040000000, 2000],
-            [1355223600000, 3000],
-            [1355306400000, 4000],
-            [1355487300000, 5000],
-            [1355571900000, 6000]
-        ]
-    };
-    $.plot($("#flot-bar-chart"), [barData], barOptions);
+        grid: { hoverable: true, clickable: true }
+    }
 
+
+    $.plot("#flot-bar-chart", [{
+        data: data1,
+        label: "perlbench-40B1cpu.10"
+    }, {
+        data: data2,
+        label: "GemsFDTD-40B1cpu.100"
+    },{
+        data: data3,
+        label: "yerda"
+    },{
+        data: data4,
+        label: "sellsavon"
+    }], chart_config);
 });

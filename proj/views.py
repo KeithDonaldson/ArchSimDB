@@ -145,18 +145,17 @@ def compare_results(request):
         results = {}
         workloads = set()
         configs = set()
+        projection_set = fields + ['_exp_name', '_conf_name']
 
         for app in apps:
             _exp_name, _conf_name, _sim_name = app.split('/')[:3]
             workloads.add(_sim_name)
-            configs.add(_conf_name)
+            configs.add(_exp_name + '/' + _conf_name)
             filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
-            result = db_actions.get(request, 'applications', selection=filters, projection=fields)
+            result = db_actions.get(request, 'applications', selection=filters, projection=projection_set)
             results[app] = OrderedDict(sorted(result[0].items()))
 
         data = {}
-
-        print(results)
 
         for field in fields:
             rows = []
@@ -165,6 +164,8 @@ def compare_results(request):
                 for result in results:
                     if result.split('/')[:3][2] == workload:
                         row.append(results.get(result).get(field))
+                    # else:
+                    #     row.append(None)
                 rows.append(row)
             data[field] = rows
 

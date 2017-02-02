@@ -4,8 +4,11 @@
     </metal:slot>
 
     <metal:slot fill-slot="head">
-        <!-- Morris Charts CSS -->
-        <link href="${request.static_url('proj:static/vendor/morrisjs/morris.css')}" rel="stylesheet">
+        <!--?<style type="text/css">-->
+            <!--?.legend table, .legend > div { height: 82px !important; opacity: 1 !important; right: -55px; top: 10px; width: 116px !important; }-->
+            <!--?.legend table { border: 1px solid #555; padding: 5px; }-->
+            <!--?#flot-tooltip { font-size: 12px; font-family: Verdana, Arial, sans-serif; position: absolute; display: none; border: 2px solid; padding: 2px; background-color: #FFF; opacity: 0.8; -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px; }-->
+        <!--?</style>-->
     </metal:slot>
 
     <metal:slot fill-slot="scripts">
@@ -15,7 +18,9 @@
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.pie.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.resize.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.time.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.categories.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot-tooltip/jquery.flot.tooltip.min.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.orderBars.js')}"></script>
         <script src="${request.static_url('proj:static/data/flot-data.js')}"></script>
     </metal:slot>
 
