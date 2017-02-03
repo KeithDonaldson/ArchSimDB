@@ -7,6 +7,23 @@
         <!-- DataTables CSS -->
         <link href="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
         <link href="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
+
+        <style>
+            #flot-tooltip {
+                font-size: 12px;
+                font-family: Verdana, Arial, sans-serif;
+                position: absolute;
+                display: none;
+                border: 2px solid;
+                padding: 2px;
+                background-color: #FFF;
+                opacity: 0.8;
+                -moz-border-radius: 5px;
+                -webkit-border-radius: 5px;
+                -khtml-border-radius: 5px;
+                border-radius: 5px;
+            }
+        </style>
     </metal:slot>
 
     <metal:slot fill-slot="scripts">
@@ -15,10 +32,11 @@
         <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
-        <!-- Flot Charts JavaScript -->
+        <!-- Chart JavaScript -->
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.categories.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.orderBars.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/html2canvas/html2canvas.js')}"></script>
 
         <script type="text/javascript" id="data" data="${results}">
 
@@ -96,9 +114,14 @@
             // Settings Menu
 
             var data_after_settings = JSON.parse(JSON.stringify(data));
+            var canvas_data;
 
             for (var config in data.configs) {
                 $('#baseline').append($('<option>', {value:config, text:data.configs[config]}));
+            }
+
+            for (var stat in data.data) {
+                $('#generate_chart_stat').append($('<option>', {value:stat, text:stat}));
             }
 
             $('#baseline').change(function() {
@@ -121,7 +144,7 @@
             });
 
             $("#download_as_csv").click(function(){
-                var csv;
+                var csv = "";
                 for (var key in data_after_settings.data) {
                     csv += key + ",";
                     var headings = data_after_settings.configs.join(",");
@@ -145,7 +168,11 @@
                 downloadFile('compared_data.csv', 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv));
             });
 
-            function createChart(stat) {
+            $('#generate_chart').click(function() {
+                $('#chart_modal').show();
+                var stat = $('#generate_chart_stat').val();
+                var type = $('#generate_chart_type').val();
+
                 var chart_list = [];
                 var workload_list = [];
                 for (var workload in data.data[stat]) {
@@ -162,41 +189,119 @@
                 }
 
                 var config_list = []
+                var symbols = []
 
                 for (var x = 0; x < workload_list.length; x++) {
-                    var config = {
-                        label: workload_list[x],
-                        data: chart_list[x]
+                    if (type == "bar") {
+                        var config = {
+                            label: workload_list[x],
+                            data: chart_list[x]
+                        };
+                    } else if (type == "line") {
+                        var config = {
+                            label: workload_list[x],
+                            data: chart_list[x]
+                        };
                     }
                     config_list.push(config)
                 }
 
                 console.log(config_list)
 
-                var chart_config =  {
-                    series: {
-                        bars: {
-                            show: true,
-                            barWidth: 1/(config_list.length+1),
-                            lineWidth: 0,
-                            order: 1,
-                            fillColor: {
-                                colors: [{
-                                    opacity: 1
-                                }, {
-                                    opacity: 0.7
-                                }]
+                if (type == "bar") {
+                    var chart_config = {
+                        series: {
+                            bars: {
+                                show: true,
+                                barWidth: 1 / (config_list.length + 1),
+                                lineWidth: 0,
+                                order: 1,
+                                fillColor: {
+                                    colors: [{
+                                        opacity: 1
+                                    }, {
+                                        opacity: 0.7
+                                    }]
+                                }
                             }
-                        }
-                    },
-                    xaxis: {
-                        mode: "categories",
-                        tickLength: 0
-                    },
-                    grid: { hoverable: true, clickable: true }
+                        },
+                        xaxis: {
+                            mode: "categories",
+                            tickLength: 0
+                        },
+                        grid: {hoverable: true, clickable: true}
+                    }
+                } else if (type == "line") {
+                    var chart_config = {
+                        series: {
+                            lines: { show: true },
+                            points: {
+                                radius: 3,
+                                show: true,
+                                fill: true
+                            },
+                        },
+                        xaxis: {
+                            mode: "categories",
+                            tickLength: 0,
+                            axisLabelPadding: 100
+                        },
+                        grid: {hoverable: true, clickable: true}
+                    }
                 }
 
-                $.plot("#bar-chart", config_list, chart_config);
+                function showTooltip(x, y, contents, z) {
+                    $('<div id="flot-tooltip">' + contents + '</div>').css({
+                        top: y - 30,
+                        left: x - 135,
+                        'border-color': z,
+                    }).appendTo("#chart_modal").fadeIn(200);
+                }
+
+                $.plot("#chart", config_list, chart_config);
+                $("#chart").bind("plothover", function (event, pos, item) {
+                    if (item) {
+                        if ((previousPoint != item.dataIndex) || (previousLabel != item.series.label)) {
+                            previousPoint = item.dataIndex;
+                            previousLabel = item.series.label;
+
+                            $("#flot-tooltip").remove();
+
+                            var x = item.datapoint[0],
+                            y = item.datapoint[1];
+                            z = item.series.color;
+
+                            showTooltip(item.pageX, item.pageY,
+                                "<b>" + item.series.label + "</b><br />" + y,
+                                z);
+                        }
+                    } else {
+                        $("#flot-tooltip").remove();
+                        previousPoint = null;
+                    }
+                });
+
+                html2canvas($('#chart'), {
+                    onrendered: function (canvas) {
+                        canvas_data = canvas.toDataURL();
+                    }
+                });
+            });
+
+            function downloadGraphImage() {
+                function downloadFile(fileName, urlData) {
+                    var aLink = document.createElement('a');
+                    aLink.download = fileName;
+                    aLink.href = urlData;
+
+                    var event = new MouseEvent('click');
+                    aLink.dispatchEvent(event);
+                }
+
+                var image = canvas_data;
+                image = image.replace("image/png","image/octet-stream");
+
+                downloadFile('generated_chart.png', 'data:image/octet-stream' + encodeURI(image));
             }
         </script>
     </metal:slot>
@@ -215,17 +320,39 @@
                         Settings
                     </div>
                     <div class="panel-body">
-                        <div class="col-lg-4">
-                            <label for="baseline">Set Baseline Column</label>
-                            <select id="baseline">
-                                <option value="-1">None</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <label for="baseline">Set Baseline Column</label><br>
+                                <select id="baseline" class="form-control">
+                                    <option value="-1">None</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-8">
+                                <label for="baseline">Generate Chart</label><br>
+                                <div class="row">
+                                    <div class="col-sm-4">
+                                        <select id="generate_chart_stat" class="form-control">
+                                            <option value="-1" selected disabled>Choose Stat</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <select id="generate_chart_type" class="form-control">
+                                            <option value="-1" selected disabled>Choose Graph Type</option>
+                                            <option value="bar">Bar Chart</option>
+                                            <option value="line">Line Chart</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <button id="generate_chart" data-toggle="modal" data-target="#chart_modal" class="btn btn-primary btn-block"><i class="fa fa-bar-chart-o" aria-hidden="true"></i> Generate Chart</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-lg-4">
-                            <button id="create_chart" onclick="createChart('00-feeder-CASOps')" class="btn btn-primary btn-lg btn-block"><i class="fa fa-download" aria-hidden="true"></i> Create Chart</button>
-                        </div>
-                        <div class="col-lg-4">
-                            <button id="download_as_csv" class="btn btn-primary btn-lg btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
+                        <div class="row" style="margin-top: 15px;">
+                            <div class="col-lg-4">
+                                <label for="baseline">Download as CSV</label><br>
+                                <button id="download_as_csv" class="btn btn-primary btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -236,9 +363,23 @@
             <div id="tables" class="col-lg-12">
             </div>
         </div>
-         <div class="row" id="charts">
-             <div class="flot-chart">
-                <div class="flot-chart-content" id="bar-chart"></div>
+         <div class="modal fade" id="chart_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel">Generated Chart</h4>
+                    </div>
+                    <div class="modal-body">
+                         <div class="flot-chart" id="chart_container" style="overflow: visible;">
+                            <div class="flot-chart-content" id="chart" style="margin-top: 50px;"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onClick="downloadGraphImage()">Download as Image</button>
+                    </div>
+                </div>
             </div>
         </div>
     </metal:slot>
