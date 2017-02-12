@@ -1,4 +1,5 @@
 import logging
+import operator
 
 
 class DatabaseInfo:
@@ -130,6 +131,29 @@ class DatabaseActions:
             names.append(conf.get('_conf_name'))
 
         return names
+
+    def get_hierarchy_(self, request):
+        apps = self.get(request, 'experiments', projection=['_exp_name', '_exp_date'])
+        app_dict = [dict(pn) for pn in apps]
+        app_dict.sort(key=operator.itemgetter('_exp_date'))
+
+        hierarchy = []
+
+        for app in app_dict:
+            hierarchy.append({
+                'id': app.get('_exp_name'),
+                'text': app.get('_exp_name'),
+                'state': 'opened',
+                'children': [
+                    {
+                        'id': 'child',
+                        'state': 'closed',
+                        'children': True
+                    }
+                ]
+            })
+
+        return hierarchy
 
     def get_hierarchy(self, request):
         apps = self.get(request, 'applications', projection=['_sim_name', '_conf_name', '_exp_name'])

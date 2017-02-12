@@ -7,6 +7,8 @@ from .dbaccess import *
 from .scanner import *
 from bson.json_util import dumps
 from collections import OrderedDict
+import re
+import ast
 
 import logging
 log = logging.getLogger(__name__)
@@ -135,6 +137,14 @@ def compare(request):
     return {'hierarchy': json.dumps(data_hierarchy, sort_keys=True)}
 
 
+@view_config(route_name='get/hierarchy', renderer='json')
+def get_hierarchy(request):
+    db_actions = DatabaseActions()
+    data_hierarchy = db_actions.get_hierarchy_(request)
+
+    return data_hierarchy
+
+
 @view_config(route_name='compare_results', renderer='templates/compare_results.pt')
 def compare_results(request):
     if 'fields[]' in request.POST:
@@ -142,18 +152,38 @@ def compare_results(request):
         apps = request.POST.getall('apps[]')
 
         db_actions = DatabaseActions()
+        scanner = Scanner()
         results = {}
         workloads = set()
         configs = set()
-        projection_set = fields + ['_exp_name', '_conf_name']
+        projection_set = [x for x in fields if not x[0] == '$'] + ['_exp_name', '_conf_name']
+        composite_stats = scanner.get_composite_stats()
 
         for app in apps:
             _exp_name, _conf_name, _sim_name = app.split('/')[:3]
             workloads.add(_sim_name)
             configs.add(_exp_name + '/' + _conf_name)
             filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
-            result = db_actions.get(request, 'applications', selection=filters, projection=projection_set)
-            results[app] = OrderedDict(sorted(result[0].items()))
+            result = db_actions.get(request, 'applications', selection=filters, projection=projection_set)[0]
+
+            for field in fields:
+                if field[0] == '$':
+                    equation = composite_stats.get('stats').get(field[1:]).strip()
+                    variables = re.findall('{.*?}', equation)
+
+                    for var in variables:
+                        variables[variables.index(var)] = var.replace('{', '').replace('}', '')
+
+                    composite_result = db_actions.get(request, 'applications', selection=filters, projection=variables)[0]
+
+                    for var in variables:
+                        equation = equation.replace('{' + var + '}', str(composite_result.get(var)))
+
+                    print('\'' + equation + '\'')
+                    composite_stat_output = eval(equation, {"__builtins__": None}, {})
+                    result[field] = composite_stat_output
+
+            results[app] = OrderedDict(sorted(result.items()))
 
         data = {}
 
@@ -226,12 +256,11 @@ def get_experiments(request):
 
 @view_config(route_name='get/fields', renderer='json')
 def get_fields(request):
-    for key in request.POST.keys():
-        print(key)
     if 'apps[]' in request.POST:
         fields = set()
         apps = request.POST.getall('apps[]')
         db_actions = DatabaseActions
+        scanner = Scanner()
 
         for app in apps:
             _exp_name, _conf_name, _sim_name = app.split('/')[:3]
@@ -242,6 +271,11 @@ def get_fields(request):
             for key, val in results[0].items():
                 if key[0] != '_':
                     fields.add(key)
+
+        composite_stats = scanner.get_composite_stats()
+
+        for key, value in composite_stats.get('stats').items():
+            fields.add('$' + key)
 
         return {'fields': sorted(list(fields))}
 

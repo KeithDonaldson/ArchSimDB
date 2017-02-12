@@ -51,6 +51,29 @@
                     },
                     keepRenderingSort: true
                 });
+
+                $("#tree").jstree({
+                    "types": {
+                        "default": {
+                            "icon": "fa fa-folder-open treeFolderIcon",
+                        }
+                    },
+                    "plugins": ["json_data", "checkbox"],
+                    "core": {
+                        "multiple": false,
+                        "data": {
+                            "data" : function(node){
+                                return {"id" : node.id};
+                            },
+                            "url" : function(node){
+                                var url = "/get/hierarchy";
+                                if(node.id === "child")
+                                    url = "/get/hierarchy/" + node.id;
+                                return url;
+                            }
+                        }
+                    },
+                });
             });
 
             var submitted_apps;
@@ -87,9 +110,21 @@
                 var apps = submitted_apps;
                 var fields = document.getElementById('fields_to').options;
                 var fieldsList = []
+                var composite_used = false;
 
                 for (var i = 0; i < fields.length; i++) {
                     fieldsList.push(fields[i].value);
+                    if (fields[i].value[0] == '$') {
+                        composite_used = true;
+                    }
+                }
+
+                if (composite_used == true) {
+                    if (confirm("This process uses Python's eval() method and trusts that your " +
+                                    "composite stats are correct. Continue?") == true) {
+                    } else {
+                        return;
+                    }
                 }
 
                 var parameters = {'apps': apps, 'fields': fieldsList};
@@ -131,34 +166,34 @@
         <div class="row">
             <div class="col-lg-12">
                 <p>This tool allows you to compare the data from multiple applications. There is no limit
-                on the number of applications that can be compared, but keep in mind that the more you add
-                the slower the results will arrive. A lot of data sifting is being done in this page, so please
-                bear in mind it may take a while.</p>
+                    on the number of applications that can be compared, but keep in mind that the more you add
+                    the slower the results will arrive. A lot of data sifting is being done in this page, so please
+                    bear in mind it may take a while.</p>
             </div>
         </div>
 
         <div class="row" id="select_apps">
-            <div class="col-lg-12">
-                <h2>Select Applications</h2>
-            </div>
+            <!--?<div class="col-lg-12">-->
+            <!--?<h2>Select Applications</h2>-->
+            <!--?</div>-->
 
-            <div class="col-xs-5" id="fromfield">
-            </div>
+            <!--?<div class="col-xs-5" id="fromfield">-->
+            <!--?</div>-->
 
-            <div class="col-xs-2">
-                <button type="button" id="search_undo" class="btn btn-primary btn-block">undo</button>
-                <button type="button" id="search_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
-                <button type="button" id="search_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>
-                <button type="button" id="search_leftSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>
-                <button type="button" id="search_leftAll" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>
-                <button type="button" id="search_redo" class="btn btn-warning btn-block">redo</button>
-            </div>
+            <!--?<div class="col-xs-2">-->
+            <!--?<button type="button" id="search_undo" class="btn btn-primary btn-block">undo</button>-->
+            <!--?<button type="button" id="search_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>-->
+            <!--?<button type="button" id="search_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>-->
+            <!--?<button type="button" id="search_leftSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>-->
+            <!--?<button type="button" id="search_leftAll" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>-->
+            <!--?<button type="button" id="search_redo" class="btn btn-warning btn-block">redo</button>-->
+            <!--?</div>-->
 
-            <div class="col-xs-5">
-                <select name="to" id="search_to" class="form-control" size="8" multiple="multiple"></select>
-            </div>
+            <!--?<div class="col-xs-5">-->
+            <!--?<select name="to" id="search_to" class="form-control" size="8" multiple="multiple"></select>-->
+            <!--?</div>-->
 
-            <div id="jstree_demo_div"></div>
+            <div id="tree"></div>
 
             <div class="col-lg-12">
                 <button type="submit" onclick="submit_apps();" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">Submit</button>

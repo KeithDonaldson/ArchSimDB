@@ -1,6 +1,7 @@
 import os
 import logging
 import hashlib
+import re
 from datetime import datetime
 from .reader import Reader
 from .dbaccess import DatabaseActions
@@ -48,7 +49,7 @@ class Scanner:
                 initiated = True
     
             for file in filenames:
-                if file != ".archsimdb_tracking_data":
+                if file != ".archsimdb_tracking_data" or ".archsimdb_composite_stats":
                     filepath = dirpath + '/' + file
                     statfile = open(filepath, 'rb')
 
@@ -75,7 +76,54 @@ class Scanner:
         meta_file.close()
 
         return {'statfile_data': self.list_of_all_statfile_data, 'logs': self.logs}
-        
+
+    def get_composite_stats(self):
+        composite_stats = {}
+        line_number = 0
+
+        try:
+            composite_stats_filepath = self.working_path + '.archsimdb_composite_stats'
+            composite_stats_file = open(composite_stats_filepath, 'r')
+
+            for line in composite_stats_file.readlines():
+                line_number += 1
+                composite_stat_name = line.split('=')[0]  # The left of the equals sign is the stat name
+                composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
+
+                if self.test_equation(composite_stat_equation, line_number):
+                    composite_stats[composite_stat_name] = composite_stat_equation
+                else:
+                    continue
+        except FileNotFoundError:
+            self.logs.append("No composite stats file found")
+
+        return {'stats': composite_stats, 'logs': self.logs}
+
+    def test_equation(self, composite_stat_equation, line_number):
+        """
+        Tests that the given equation will parse in Python. Rudimentary test only and just catches
+        the basic syntax errors.
+
+        :param composite_stat_equation: The equation of the composite stat
+        :type composite_stat_equation: str
+
+        :param line_number: The line number of the current composite stat
+        :type line_number: int
+
+        :return: bool
+        """
+
+        variables = re.sub('{.*?}', '1', composite_stat_equation).strip()  # Replace all variables with 1
+
+        try:
+            compile(variables, '<string>', 'eval')
+            return True
+        except SyntaxError:
+            self.logs.append("Composite stat on line " + str(line_number) + " failed to compile. Please "
+                                                                            "check that it is valied Python.")
+
+        return False
+
     def prepare_input(self, filepath):
         """
         Parse and add releveant metadata to a new or changed statfile
@@ -90,7 +138,7 @@ class Scanner:
         self.statfile_metadata['_sim_name'] = filename
         self.statfile_metadata['_conf_name'] = filepath.split('/')[-2]
         self.statfile_metadata['_exp_name'] = filepath.split('/')[-3]
-        self.statfile_metadata['_sim_date'] = datetime.strptime(filename.split('.')[4][:10], "%Y-%m-%d")
+        self.statfile_metadata['_sim_date'] = datetime.datetime.fromtimestamp(filepath).strftime('%Y-%m-%d')
 
         parsed_data = self.reader.load(filepath)
         for key, value in self.statfile_metadata.items():
