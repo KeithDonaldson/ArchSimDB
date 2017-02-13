@@ -18,13 +18,13 @@ class Scanner:
         self.logs = []
         self.working_path = "/home/keith/Documents/statfiles/s1319624/"
 
+        if self.working_path[-1] == '/':
+            self.working_path = self.working_path[:-1]
+
     def scanner(self):
         initiated = False
     
         logger = logging.getLogger("sync")
-    
-        if self.working_path[-1] == '/':
-            self.working_path = self.working_path[:-1]
     
         for dirpath, dirnames, filenames in os.walk(self.working_path):
             if not initiated:
@@ -49,7 +49,7 @@ class Scanner:
                 initiated = True
     
             for file in filenames:
-                if file != ".archsimdb_tracking_data" or ".archsimdb_composite_stats":
+                if file != ".archsimdb_tracking_data" and file != ".archsimdb_composite_stats":
                     filepath = dirpath + '/' + file
                     statfile = open(filepath, 'rb')
 
@@ -61,16 +61,13 @@ class Scanner:
                     if filepath not in self.checksums:
                         meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
                         self.prepare_input(filepath)
-                        logger.info("Found new file at " + filepath)
                         self.logs.append("Found new file at " + filepath)
                     elif self.checksums.get(filepath) != self.hashfile(statfile, hashlib.md5()):
                         meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
                         self.prepare_input(filepath)
-                        logger.info("Found changed file at " + filepath)
                         self.logs.append("Found changed file at " + filepath)
                     else:
                         meta_file.write(filepath + " " + self.checksums.get(filepath) + "\n")
-                        logger.info("Found unchanged file at " + filepath)
                         self.logs.append("Found unchanged file at " + filepath)
     
         meta_file.close()
@@ -82,7 +79,7 @@ class Scanner:
         line_number = 0
 
         try:
-            composite_stats_filepath = self.working_path + '.archsimdb_composite_stats'
+            composite_stats_filepath = self.working_path + '/.archsimdb_composite_stats'
             composite_stats_file = open(composite_stats_filepath, 'r')
 
             for line in composite_stats_file.readlines():
@@ -92,6 +89,7 @@ class Scanner:
 
                 if self.test_equation(composite_stat_equation, line_number):
                     composite_stats[composite_stat_name] = composite_stat_equation
+                    self.logs.append("Added composite stat called " + composite_stat_name)
                 else:
                     continue
         except FileNotFoundError:
@@ -120,9 +118,25 @@ class Scanner:
             return True
         except SyntaxError:
             self.logs.append("Composite stat on line " + str(line_number) + " failed to compile. Please "
-                                                                            "check that it is valied Python.")
+                                                                            "check that it is valid Python.")
 
         return False
+
+    def delete_tracking_file(self):
+        """
+        Deletes the `.archsimdb_tracking_data` file
+
+        :return: logs
+        """
+
+        meta_filepath = self.working_path + '/.archsimdb_tracking_data'
+
+        try:
+            os.remove(meta_filepath)
+            self.logs.append("Tracking file detelted successfully.")
+        except FileNotFoundError:
+            self.logs.append("Couldn't find tracking file, aborting.")
+
 
     def prepare_input(self, filepath):
         """
@@ -138,7 +152,7 @@ class Scanner:
         self.statfile_metadata['_sim_name'] = filename
         self.statfile_metadata['_conf_name'] = filepath.split('/')[-2]
         self.statfile_metadata['_exp_name'] = filepath.split('/')[-3]
-        self.statfile_metadata['_sim_date'] = datetime.datetime.fromtimestamp(filepath).strftime('%Y-%m-%d')
+        self.statfile_metadata['_sim_date'] = datetime.fromtimestamp(os.path.getmtime(filepath))
 
         parsed_data = self.reader.load(filepath)
         for key, value in self.statfile_metadata.items():

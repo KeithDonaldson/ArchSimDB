@@ -53,27 +53,26 @@
                 });
 
                 $("#tree").jstree({
-                    "types": {
-                        "default": {
-                            "icon": "fa fa-folder-open treeFolderIcon",
-                        }
-                    },
-                    "plugins": ["json_data", "checkbox"],
+                    "plugins": ["json_data", "checkbox", "search"],
                     "core": {
-                        "multiple": false,
+                        "multiple": true,
                         "data": {
                             "data" : function(node){
                                 return {"id" : node.id};
                             },
-                            "url" : function(node){
-                                var url = "/get/hierarchy";
-                                if(node.id === "child")
-                                    url = "/get/hierarchy/" + node.id;
-                                return url;
-                            }
+                            "url": "/get/hierarchy"
                         }
                     },
+                    "search": {
+                        "case_insensitive": true,
+                        "show_only_matches" : true
+                    },
                 });
+            });
+
+            $(".search-input").keyup(function() {
+                var searchString = $(this).val();
+                $('#tree').jstree('search', searchString);
             });
 
             var submitted_apps;
@@ -81,14 +80,19 @@
             function submit_apps() {
                 var selectList = $("#fields");
                 var selectList_to = $("#fields_to");
-                var myApps = document.getElementById('search_to').options;
-                var apps = []
+                var apps = $('#tree').jstree(true).get_selected()
 
-                for (var i = 0; i < myApps.length; i++) {
-                    apps.push(myApps[i].value);
+                for (var i = 0; i < apps.length; i++) {
+                    if (apps[i][0] != '*') {
+                        apps.splice(i, 1);
+                        i -= 1;
+                    } else {
+                        apps[i] = apps[i].slice(1, apps[i].length);
+                    }
                 }
-                submitted_apps = apps;
 
+                apps.sort();
+                submitted_apps = apps;
                 selectList.empty();
                 selectList_to.empty();
 
@@ -103,6 +107,8 @@
                         $("#loading_row").hide();
                         $("#select_rows").show();
                     }
+
+                    return false;
                 });
             };
 
@@ -173,27 +179,14 @@
         </div>
 
         <div class="row" id="select_apps">
-            <!--?<div class="col-lg-12">-->
-            <!--?<h2>Select Applications</h2>-->
-            <!--?</div>-->
+            <div class="col-lg-12">
+                <h2>Select Applications</h2>
+            </div>
 
-            <!--?<div class="col-xs-5" id="fromfield">-->
-            <!--?</div>-->
-
-            <!--?<div class="col-xs-2">-->
-            <!--?<button type="button" id="search_undo" class="btn btn-primary btn-block">undo</button>-->
-            <!--?<button type="button" id="search_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>-->
-            <!--?<button type="button" id="search_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>-->
-            <!--?<button type="button" id="search_leftSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-left"></i></button>-->
-            <!--?<button type="button" id="search_leftAll" class="btn btn-block"><i class="glyphicon glyphicon-backward"></i></button>-->
-            <!--?<button type="button" id="search_redo" class="btn btn-warning btn-block">redo</button>-->
-            <!--?</div>-->
-
-            <!--?<div class="col-xs-5">-->
-            <!--?<select name="to" id="search_to" class="form-control" size="8" multiple="multiple"></select>-->
-            <!--?</div>-->
-
-            <div id="tree"></div>
+            <div class="col-lg-12">
+                 <input class="search-input form-control" placeholder="Search applications..."></input>
+                <div id="tree"></div>
+            </div>
 
             <div class="col-lg-12">
                 <button type="submit" onclick="submit_apps();" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">Submit</button>

@@ -67,13 +67,24 @@ class DatabaseActions:
             
             for config in configurations:
                 conf_pairs.append([config.get('_conf_name'), config.get('_exp_name')])
+
+            sim_dates = self.get(request, 'applications',
+                                 selection={'_exp_name': statfile.get('_exp_name'),
+                                            '_conf_name': statfile.get('_conf_name')},
+                                 projection=['_sim_date'])
+            sim_dates_dict = [dict(pn) for pn in sim_dates]
+            latest_date = statfile.get('_sim_date')
+
+            for date in sim_dates_dict:
+                if date.get('_sim_date').strftime("%Y-%m-%d") >= statfile.get('_sim_date').strftime("%Y-%m-%d"):
+                    latest_date = date.get('_sim_date')
             
             # If this statfile is from a new experiment, create the experiment in the database
 
             if statfile.get('_exp_name') not in experiment_names:
                 exp_metadata = {'_exp_name': statfile.get('_exp_name'),
                                 '_exp_owner': statfile.get('_sim_owner'),
-                                '_exp_date': statfile.get('_sim_date')}
+                                '_exp_date': latest_date}
                 self.insert_experiment(request, exp_metadata)
                 
             # If this statfile is from a new configuration, create the configuration in the database           
@@ -81,7 +92,7 @@ class DatabaseActions:
             if conf_identity not in conf_pairs:
                 conf_metadata = {'_conf_name': statfile.get('_conf_name'),
                                  '_conf_owner': statfile.get('_sim_owner'),
-                                 '_conf_date': statfile.get('_sim_date'),
+                                 '_conf_date': latest_date,
                                  '_exp_name': statfile.get('_exp_name')}
                 self.insert_configuration(request, conf_metadata)
             
@@ -132,50 +143,55 @@ class DatabaseActions:
 
         return names
 
-    def get_hierarchy_(self, request):
-        apps = self.get(request, 'experiments', projection=['_exp_name', '_exp_date'])
+    def delete_all(self, request):
+        request.db['applications'].delete_many({})
+        self.logs.append("Deleted all applications")
+
+        request.db['configurations'].delete_many({})
+        self.logs.append("Deleted all configurations")
+
+        request.db['experiments'].delete_many({})
+        self.logs.append("Deleted all experiments")
+
+        return {'logs': self.logs}
+
+    def get_hierarchy(self, request):
+        exps = self.get(request, 'experiments', projection=['_exp_name', '_exp_date'])
+        exp_dict = [dict(pn) for pn in exps]
+        exp_dict.sort(key=operator.itemgetter('_exp_date'))
+
+        confs = self.get(request, 'configurations', projection=['_conf_name', '_conf_date', '_exp_name'])
+        conf_dict = [dict(pn) for pn in confs]
+        conf_dict.sort(key=operator.itemgetter('_conf_date'))
+
+        apps = self.get(request, 'applications', projection=['_sim_name', '_sim_date', '_conf_name', '_exp_name'])
         app_dict = [dict(pn) for pn in apps]
-        app_dict.sort(key=operator.itemgetter('_exp_date'))
+        app_dict.sort(key=operator.itemgetter('_sim_date'))
 
         hierarchy = []
 
+        for exp in exp_dict:
+            hierarchy.append({
+                'id': exp.get('_exp_name'),
+                'text': exp.get('_exp_name'),
+                'parent': '#',
+                'icon': 'fa fa-folder-o'
+            })
+
+        for conf in conf_dict:
+            hierarchy.append({
+                'id': conf.get('_exp_name') + '/' + conf.get('_conf_name'),
+                'text': conf.get('_conf_name'),
+                'parent': conf.get('_exp_name'),
+                'icon': 'fa fa-folder-o'
+            })
+
         for app in app_dict:
             hierarchy.append({
-                'id': app.get('_exp_name'),
-                'text': app.get('_exp_name'),
-                'state': 'opened',
-                'children': [
-                    {
-                        'id': 'child',
-                        'state': 'closed',
-                        'children': True
-                    }
-                ]
+                'id': '*' + app.get('_exp_name') + '/' + app.get('_conf_name') + '/' + app.get('_sim_name'),
+                'text': app.get('_sim_name'),
+                'parent': app.get('_exp_name') + '/' + app.get('_conf_name'),
+                'icon': 'fa fa-file-text-o'
             })
 
         return hierarchy
-
-    def get_hierarchy(self, request):
-        apps = self.get(request, 'applications', projection=['_sim_name', '_conf_name', '_exp_name'])
-        app_dict = [dict(pn) for pn in apps]
-
-        hierarchy = {}
-
-        for app in app_dict:
-            _exp_name = app.get('_exp_name')
-            _conf_name = app.get('_conf_name')
-            _sim_name = app.get('_sim_name')
-
-            if _exp_name in hierarchy:
-                if _conf_name in hierarchy[_exp_name]:
-                    hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
-                else:
-                    hierarchy[_exp_name][_conf_name] = {}
-                    hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
-            else:
-                hierarchy[_exp_name] = {}
-                hierarchy[_exp_name][_conf_name] = {}
-                hierarchy[_exp_name][_conf_name][_sim_name] = _sim_name
-
-        return hierarchy
-

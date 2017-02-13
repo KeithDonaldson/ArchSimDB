@@ -100,6 +100,23 @@ def sync(request):
         return {}
 
 
+@view_config(route_name='delete', renderer='templates/delete.pt')
+def delete(request):
+    if request.method == 'POST':
+        scanner = Scanner()
+        db_actions = DatabaseActions()
+
+        dbaccess_logs = db_actions.delete_all(request).get('logs')
+        scanner.delete_tracking_file()
+        scanner_logs = scanner.logs
+
+        logs = scanner_logs + dbaccess_logs
+
+        return {'logs': logs}
+    else:
+        return {}
+
+
 @view_config(route_name='query', renderer='templates/query.pt')
 def query(request):
     db_actions = DatabaseActions()
@@ -140,7 +157,7 @@ def compare(request):
 @view_config(route_name='get/hierarchy', renderer='json')
 def get_hierarchy(request):
     db_actions = DatabaseActions()
-    data_hierarchy = db_actions.get_hierarchy_(request)
+    data_hierarchy = db_actions.get_hierarchy(request)
 
     return data_hierarchy
 
@@ -179,7 +196,6 @@ def compare_results(request):
                     for var in variables:
                         equation = equation.replace('{' + var + '}', str(composite_result.get(var)))
 
-                    print('\'' + equation + '\'')
                     composite_stat_output = eval(equation, {"__builtins__": None}, {})
                     result[field] = composite_stat_output
 

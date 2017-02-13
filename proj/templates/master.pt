@@ -114,6 +114,9 @@
                         <li>
                             <a href="/sync"><i class="fa fa-refresh fa-fw"></i> Sync</a>
                         </li>
+                        <li>
+                            <a href="/delete"><i class="fa fa-trash-o fa-fw"></i> Delete</a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
