@@ -1204,28 +1204,26 @@ $(function() {
 $(function () {
 
     var data1 = [
-        ["exp2/conf1", 417246],
-        ["exp2/conf2", 317246],
-        ["exp2/conf3", 613451],
-    ];
+        ["perlbench-40B1cpu.10", 417246],
+        ["GemsFDTD-40B1cpu.100", 664810],
+        ["yerda", 564810],
+        ["sellsavon", 564810],
+    ]
 
     var data2 = [
-        ["exp2/conf1", 664810],
-        ["exp2/conf2", 364810],
-        ["exp2/conf3", 565535],
-    ];
+        ["perlbench-40B1cpu.10", 317246],
+        ["GemsFDTD-40B1cpu.100", 364810],
+        ["yerda", 664810],
+        ["sellsavon", 664810],
+    ]
 
     var data3 = [
-        ["exp2/conf1", 564810],
-        ["exp2/conf2", 664810],
-        ["exp2/conf3", 365535],
-    ];
+        ["perlbench-40B1cpu.10", 613451],
+        ["GemsFDTD-40B1cpu.100", 565535],
+        ["yerda", 365535],
+        ["sellsavon", 365535],
+    ]
 
-    var data4 = [
-        ["exp2/conf1", 564810],
-        ["exp2/conf2", 664810],
-        ["exp2/conf3", 365535],
-    ];
 
      var chart_config =  {
         series: {
@@ -1253,15 +1251,12 @@ $(function () {
 
     $.plot("#flot-bar-chart", [{
         data: data1,
-        label: "perlbench-40B1cpu.10"
+        label: "exp2/conf1"
     }, {
         data: data2,
-        label: "GemsFDTD-40B1cpu.100"
+        label: "exp2/conf2"
     },{
         data: data3,
-        label: "yerda"
-    },{
-        data: data4,
-        label: "sellsavon"
+        label: "exp2/conf3"
     }], chart_config);
 });

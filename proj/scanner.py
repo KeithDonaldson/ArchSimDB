@@ -16,15 +16,14 @@ class Scanner:
         self.checksums = {}
         self.list_of_all_statfile_data = []
         self.logs = []
-        self.working_path = "/home/keith/Documents/statfiles/s1319624/"
+
+        self.working_path = '/home/keith/Documents/statfiles/s1319624/'
 
         if self.working_path[-1] == '/':
             self.working_path = self.working_path[:-1]
 
     def scanner(self):
         initiated = False
-    
-        logger = logging.getLogger("sync")
     
         for dirpath, dirnames, filenames in os.walk(self.working_path):
             if not initiated:
@@ -71,8 +70,9 @@ class Scanner:
                         self.logs.append("Found unchanged file at " + filepath)
     
         meta_file.close()
+        statfile_data = self.list_of_all_statfile_data
 
-        return {'statfile_data': self.list_of_all_statfile_data, 'logs': self.logs}
+        return {'statfile_data': statfile_data, 'logs': self.logs}
 
     def get_composite_stats(self):
         composite_stats = {}
@@ -84,7 +84,7 @@ class Scanner:
 
             for line in composite_stats_file.readlines():
                 line_number += 1
-                composite_stat_name = line.split('=')[0]  # The left of the equals sign is the stat name
+                composite_stat_name = line.split('=')[0].strip()  # The left of the equals sign is the stat name
                 composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
 
                 if self.test_equation(composite_stat_equation, line_number):
@@ -136,7 +136,6 @@ class Scanner:
             self.logs.append("Tracking file detelted successfully.")
         except FileNotFoundError:
             self.logs.append("Couldn't find tracking file, aborting.")
-
 
     def prepare_input(self, filepath):
         """

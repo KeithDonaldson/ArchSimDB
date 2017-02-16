@@ -86,6 +86,9 @@ class DatabaseActions:
                                 '_exp_owner': statfile.get('_sim_owner'),
                                 '_exp_date': latest_date}
                 self.insert_experiment(request, exp_metadata)
+            else:
+                self.update(request, 'experiments', {'_exp_date': latest_date},
+                            selection={'_exp_name': statfile.get('_exp_name')})
                 
             # If this statfile is from a new configuration, create the configuration in the database           
 
@@ -95,9 +98,26 @@ class DatabaseActions:
                                  '_conf_date': latest_date,
                                  '_exp_name': statfile.get('_exp_name')}
                 self.insert_configuration(request, conf_metadata)
+            else:
+                self.update(request, 'configurations', {'_conf_date': latest_date},
+                            selection={'_exp_name': statfile.get('_exp_name'),
+                                       '_conf_name': statfile.get('_conf_name')})
+
+            # Check for duplicate in the database
+
+            duplicate = self.get(request, 'applications',
+                                 selection={'_exp_name': statfile.get('_exp_name'),
+                                            '_conf_name': statfile.get('_conf_name'),
+                                            '_sim_name': statfile.get('_sim_name')},
+                                 projection=['_sim_name'])
             
             # Finally, insert the parsed statfile into the database
-            
+
+            if duplicate.count() != 0:
+                self.logs.append("Deleting previous version of " + statfile.get('_sim_name'))
+                self.delete(request, 'applications', selection={'_exp_name': statfile.get('_exp_name'),
+                                                                '_conf_name': statfile.get('_conf_name'),
+                                                                '_sim_name': statfile.get('_sim_name')})
             self.insert_application(request, statfile)
 
         if self.logs is None:
@@ -108,6 +128,14 @@ class DatabaseActions:
     @staticmethod
     def get(request, collection, selection={}, projection=None):
         return request.db[collection].find(selection, projection=projection)
+
+    @staticmethod
+    def update(request, collection, pairs, selection={}):
+        return request.db[collection].update_one(selection, {'$set': pairs}, upsert=False)
+
+    @staticmethod
+    def delete(request, collection, selection={}):
+        return request.db[collection].delete_one(selection)
 
     def insert_application(self, request, document_data):
         self.logs.append("Inserting application with name " + document_data.get('_sim_name'))

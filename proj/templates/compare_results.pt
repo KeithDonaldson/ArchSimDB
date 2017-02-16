@@ -37,6 +37,7 @@
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.categories.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/flot/jquery.flot.orderBars.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/html2canvas/html2canvas.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/clipboard/clipboard.min.js')}"></script>
 
         <script type="text/javascript" id="data" data="${results}">
 
@@ -116,14 +117,23 @@
             var data_after_settings = JSON.parse(JSON.stringify(data));
             var canvas_data;
 
+            // ---------- ON PAGE LOAD ---------- //
+
+            // Fill the select menu for choosing a baseline column with avaiable configuratoins
             for (var config in data.configs) {
                 $('#baseline').append($('<option>', {value:config, text:data.configs[config]}));
             }
 
+            // Fill the select menu for choosing which stat to generate a graph for with available stats
             for (var stat in data.data) {
                 $('#generate_chart_stat').append($('<option>', {value:stat, text:stat}));
             }
 
+
+            // ---------- CALLABLE FUNCTIONS ---------- //
+
+
+            // -- 1. CHOOSING BASELINE COLUMN
             $('#baseline').change(function() {
                 data_after_settings = JSON.parse(JSON.stringify(data));
                 var selected = parseInt($('#baseline').val())+1;
@@ -134,7 +144,8 @@
                             var baseline = workloads[workload][selected];
                             for (var i = 1; i < workloads[workload].length; i++) {
                                 if (i != selected && baseline != null && workloads[workload][i] != null) {
-                                    workloads[workload][i] = parseInt(workloads[workload][i])/baseline;
+                                    workloads[workload][i] = parseFloat(workloads[workload][i])/baseline;
+                                    workloads[workload][selected] = 1;
                                 }
                             }
                         }
@@ -143,6 +154,8 @@
                 updateTables(data_after_settings);
             });
 
+
+            // -- 2. DOWNLOADING DATA AS CSV
             $("#download_as_csv").click(function(){
                 var csv = "";
                 for (var key in data_after_settings.data) {
@@ -168,45 +181,79 @@
                 downloadFile('compared_data.csv', 'data:text/csv;charset=UTF-8,' + encodeURIComponent(csv));
             });
 
+
+            // -- 3. GENERATE CHART
             $('#generate_chart').click(function() {
+                if ($('#advanced_graph_edit').is(':checked')) {
+                    var stat = $('#generate_chart_stat').val();
+
+                    $('#advanced_edit_modal').modal('show');
+                    $('#advanced_edit_modal_textbox').val(data_after_settings.data[stat].join("\n"));
+
+                    $('#advanced_edit_modal_replace_nulls').on('click', function () {
+                        var lines = $('#advanced_edit_modal_textbox').val().split(/\n/);
+                        for (var i = 0; i < lines.length; i++) {
+                            console.log(lines[i])
+                            lines[i] = lines[i].replace(/,,/g, ",0,")
+                            if (lines[i][lines[i].length-1] == ',') {
+                                lines[i] = lines[i] + '0'
+                            }
+                        }
+                        $('#advanced_edit_modal_textbox').val(lines.join("\n"));
+                    });
+
+                    $("#advanced_edit_modal_submit").on("click", function () {
+                        var lines = $('#advanced_edit_modal_textbox').val().split(/\n/);
+                        var data = []
+                        for (var i=0; i < lines.length; i++) {
+                            if (/\S/.test(lines[i])) {
+                                data.push(lines[i].split(','));
+                            }
+                        }
+                        $('#advanced_edit_modal').modal('hide');
+
+                        var outputData = {'data': {[stat]: data}}
+                        generateChart(outputData);
+                    });
+                } else {
+                    generateChart(data_after_settings);
+                }
+            });
+
+            function generateChart(inputData) {
+                console.log(inputData)
                 $('#chart_modal').show();
+                $('#chart_modal').modal('show');
                 var stat = $('#generate_chart_stat').val();
                 var type = $('#generate_chart_type').val();
 
                 var chart_list = [];
-                var workload_list = [];
-                for (var workload in data.data[stat]) {
-                    var workload_data = data.data[stat][workload];
+                for (var x = 0; x < data_after_settings.configs.length; x++) {
+                    var workload_data = inputData.data[stat];
                     var values = [];
-                    for (var i = 1; i < workload_data.length; i++) {
-                        var tuple = [data.configs[i-1], workload_data[i]];
+                    for (var i = 0; i < workload_data.length; i++) {
+                        var tuple = [workload_data[i][0], workload_data[i][x+1]];
                         values.push(tuple);
-                        console.log("in");
                     }
-                    workload_list.push(workload_data[0]);
-                    chart_list.push(values.slice(0,2));
-                    console.log(values)
+                    chart_list.push(values);
                 }
 
                 var config_list = []
-                var symbols = []
 
-                for (var x = 0; x < workload_list.length; x++) {
+                for (var x = 0; x < data_after_settings.configs.length; x++) {
                     if (type == "bar") {
                         var config = {
-                            label: workload_list[x],
+                            label: data_after_settings.configs[x],
                             data: chart_list[x]
                         };
                     } else if (type == "line") {
                         var config = {
-                            label: workload_list[x],
+                            label: data_after_settings.configs[x],
                             data: chart_list[x]
                         };
                     }
                     config_list.push(config)
                 }
-
-                console.log(config_list)
 
                 if (type == "bar") {
                     var chart_config = {
@@ -268,12 +315,12 @@
                             $("#flot-tooltip").remove();
 
                             var x = item.datapoint[0],
-                            y = item.datapoint[1];
+                                    y = item.datapoint[1];
                             z = item.series.color;
 
                             showTooltip(item.pageX, item.pageY,
-                                "<b>" + item.series.label + "</b><br />" + y,
-                                z);
+                                    "<b>" + item.series.label + "</b><br />" + y,
+                                    z);
                         }
                     } else {
                         $("#flot-tooltip").remove();
@@ -286,8 +333,10 @@
                         canvas_data = canvas.toDataURL();
                     }
                 });
-            });
+            }
 
+
+            // 4. DOWNLOAD CHART AS IMAGE
             function downloadGraphImage() {
                 function downloadFile(fileName, urlData) {
                     var aLink = document.createElement('a');
@@ -303,6 +352,26 @@
 
                 downloadFile('generated_chart.png', 'data:image/octet-stream' + encodeURI(image));
             }
+
+
+            // 5. GENERATE SHAREABLE URL
+            $('#generate_shareable_url').click(function() {
+                $('#shareable_url_modal').modal('show');
+                if (!data.from_permalink) {
+                    var stats = data.stats.join().trim().replace(/\//g, ':');
+                    var apps = data.apps.join().trim().replace(/\//g, ':');
+
+                    var curl = window.location.href;
+
+                    var shareable_url = curl + '/stats=' + stats + '/apps=' + apps;
+                } else {
+                    var shareable_url = window.location.href;
+                }
+
+                $('#shareable_url_text').val(shareable_url);
+
+                new Clipboard('#shareable_url_copy');
+            });
         </script>
     </metal:slot>
 
@@ -327,31 +396,40 @@
                                     <option value="-1">None</option>
                                 </select>
                             </div>
-                            <div class="col-lg-8">
+                            <div class="col-lg-4">
+                                <label for="baseline">Download as CSV</label><br>
+                                <button id="download_as_csv" class="btn btn-primary btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="baseline">Get Permalink</label><br>
+                                <button id="generate_shareable_url" class="btn btn-primary btn-block"><i class="fa fa-link" aria-hidden="true"></i> Get Permalink</button>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 15px;">
+                            <div class="col-lg-12">
                                 <label for="baseline">Generate Chart</label><br>
                                 <div class="row">
-                                    <div class="col-sm-4">
+                                    <div class="col-sm-3">
                                         <select id="generate_chart_stat" class="form-control">
                                             <option value="-1" selected disabled>Choose Stat</option>
                                         </select>
                                     </div>
-                                    <div class="col-sm-4">
+                                    <div class="col-sm-3">
                                         <select id="generate_chart_type" class="form-control">
                                             <option value="-1" selected disabled>Choose Graph Type</option>
                                             <option value="bar">Bar Chart</option>
                                             <option value="line">Line Chart</option>
                                         </select>
                                     </div>
-                                    <div class="col-sm-4">
-                                        <button id="generate_chart" data-toggle="modal" data-target="#chart_modal" class="btn btn-primary btn-block"><i class="fa fa-bar-chart-o" aria-hidden="true"></i> Generate Chart</button>
+                                    <div class="col-sm-3">
+                                        <label class="form-check-label">
+                                            <input id="advanced_graph_edit" class="form-check-input" type="checkbox">  Advanced Data Edit
+                                        </label>
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <button id="generate_chart" class="btn btn-primary btn-block"><i class="fa fa-bar-chart-o" aria-hidden="true"></i> Generate Chart</button>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="row" style="margin-top: 15px;">
-                            <div class="col-lg-4">
-                                <label for="baseline">Download as CSV</label><br>
-                                <button id="download_as_csv" class="btn btn-primary btn-block"><i class="fa fa-download" aria-hidden="true"></i> Download as CSV</button>
                             </div>
                         </div>
                     </div>
@@ -360,10 +438,19 @@
         </div>
 
         <div class="row">
+            <div class="col-lg-12" tal:condition="exists:warnings">
+                <div class="alert alert-warning alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <b>Warning!</b> There was an error in one or more of your composite stats.
+                    <ul tal:repeat="item warnings">
+                        <li tal:content="item"></li>
+                    </ul>
+                </div>
+            </div>
             <div id="tables" class="col-lg-12">
             </div>
         </div>
-         <div class="modal fade" id="chart_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal fade" id="chart_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -371,13 +458,54 @@
                         <h4 class="modal-title" id="myModalLabel">Generated Chart</h4>
                     </div>
                     <div class="modal-body">
-                         <div class="flot-chart" id="chart_container" style="overflow: visible;">
+                        <div class="flot-chart" id="chart_container" style="overflow: visible;">
                             <div class="flot-chart-content" id="chart" style="margin-top: 50px;"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                         <button type="button" class="btn btn-primary" onClick="downloadGraphImage()">Download as Image</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="advanced_edit_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true" style="float:left;">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel">Edit Chart Data</h4>
+                    </div>
+                    <div class="modal-body">
+                        <textarea rows="20" id="advanced_edit_modal_textbox" class="form-control"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="close" data-dismiss="modal" style="float:left;">Close</button>
+                        <button type="button" class="btn btn-default" id="advanced_edit_modal_replace_nulls">Replace Nulls with 0</button>
+                        <button type="button" class="btn btn-primary" id="advanced_edit_modal_submit">Generate Chart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="shareable_url_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="myModalLabel">Permalink</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="input-group custom-search-form">
+                            <input type="text" class="form-control" id="shareable_url_text">
+                            <span class="input-group-btn">
+                              <button class="btn btn-default" type="button" id="shareable_url_copy" data-clipboard-target="#shareable_url_text">
+                                <i class="fa fa-clipboard"></i>
+                              </button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" style="float:left;">Close</button>
                     </div>
                 </div>
             </div>

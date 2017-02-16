@@ -48,6 +48,8 @@ def main(global_config, **settings):
     config.add_route('compare_results', '/compare/results')
     config.add_route('app_info', '/data/{_exp_name}/{_conf_name}/{_sim_name}')
     config.add_route('get/hierarchy', '/get/hierarchy')
+    config.add_route('compare_results_permalink',
+                     '/compare/results/stats={stats}/apps={apps}')
 
     config.scan()
     return config.make_wsgi_app()

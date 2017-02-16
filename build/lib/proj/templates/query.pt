@@ -1,0 +1,177 @@
+<metal:macro use-macro="master">
+    <metal:slot fill-slot="title">
+        <title>Query | ArchSim DB</title>
+    </metal:slot>
+
+    <metal:slot fill-slot="head">
+        <!-- DataTables CSS -->
+        <link href="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
+        <link href="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
+    </metal:slot>
+
+    <metal:slot fill-slot="scripts">
+        <!-- DataTables JavaScript -->
+        <script src="${request.static_url('proj:static/vendor/datatables/js/jquery.dataTables.min.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
+        <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
+
+        <script type="text/javascript" id="exp_list" exps="${experiments}">
+            var data = JSON.parse($("#exp_list").attr("exps"));
+            $(document).ready(function() {
+                $('#experiment_table').DataTable({
+                    data: data,
+                    columns: [
+                        { data: '_exp_name',
+                          'render': function (data) {
+                                return '<a onclick="getConfs(\'' + data + '\')" style="cursor: pointer">' + data + '</a>';
+                            }
+                        },
+                        { data: '_exp_owner' },
+                        { data: '_exp_date' }
+                    ],
+                    responsive: true
+                });
+            });
+
+            function getConfs(_exp_name) {
+                $.post( "get/configurations", { '_exp_name': _exp_name }, function( data ) {
+                    var parsed_data = JSON.parse(data);
+                    $('#configuration_table').DataTable({
+                        responsive: true,
+                        destroy: true,
+                        data: parsed_data,
+                        columns: [
+                            { data: '_conf_name',
+                              'render': function (data) {
+                                  return '<a onclick="getApps(\'' + data + '\', \'' + _exp_name + '\')" style="cursor: pointer">' + data + '</a>';
+                              }
+                            },
+                            { data: '_conf_owner' },
+                            { data: '_exp_name' },
+                            { data: '_conf_date' }
+                        ]
+                    });
+                    $("#conf_title").text("Configurations of " + _exp_name);
+                    $("#confrow").show();
+                    $("#exprow").hide();
+                    $("#exprow_change").show();
+                    $("#exprow_change h2").replaceWith("<h2>Experiment: " + _exp_name + ". <a onclick='change(\"experiments\")' style='cursor: pointer;'>Change</a></h2>")
+                });
+            };
+
+            function getApps(_conf_name, _exp_name) {
+                $.post( "get/applications", { '_conf_name': _conf_name, '_exp_name': _exp_name }, function( data ) {
+                    var parsed_data = JSON.parse(data);
+                    $('#application_table').DataTable({
+                        responsive: true,
+                        destroy: true,
+                        data: parsed_data,
+                        columns: [
+                            { data: '_sim_name',
+                              'render': function (data) {
+                                  return '<a href="data/' + _exp_name + '/' + _conf_name + '/' + data + '">' + data + '</a>';
+                              }
+                            },
+                            { data: '_sim_owner' },
+                            { data: '_conf_name' },
+                            { data: '_exp_name' },
+                            { data: '_sim_date' }
+                        ]
+                    });
+                    $("#app_title").text("Applications of " + _conf_name);
+                    $("#approw").show();
+                    $("#confrow").hide();
+                    $("#confrow_change").show();
+                    $("#confrow_change h2").replaceWith("<h2>Configuration: " + _conf_name + ". <a onclick='change(\"configurations\")' style='cursor: pointer;'>Change</a></h2>")
+                });
+            };
+
+            function change(item) {
+                if (item == "configurations") {
+                    $("#approw").hide();
+                    $("#confrow_change").hide();
+                    $("#confrow").show();
+                } else if (item == "experiments") {
+                    $("#confrow").hide();
+                    $("#approw").hide();
+                    $("#exprow_change").hide();
+                    $("#confrow_change").hide();
+                    $("#exprow").show();
+                }
+            }
+        </script>
+    </metal:slot>
+
+    <metal:slot fill-slot="body">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">Query</h1>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <!-- /.row -->
+        <div id="exprow_change" style="display: none;">
+            <h2></h2>
+        </div>
+        <div class="row" id="exprow">
+            <div class="col-lg-12">
+                <h2>Experiments</h2>
+                <div id="experiments">
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="experiment_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <div id="confrow_change" style="display: none;">
+            <hr>
+            <h2></h2>
+        </div>
+        <div class="row" id="confrow" style="display: none;">
+            <div class="col-lg-12">
+                <hr>
+                <h2 id="conf_title">Configurations</h2>
+                <div id="configurations" >
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="configuration_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Experiment Name</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <div class="row" id="approw" style="display: none;">
+            <div class="col-lg-12">
+                <hr>
+                <h2 id="app_title">Applications</h2>
+                <div id="applications">
+                    <table width="100%" class="table table-striped table-bordered table-hover" id="application_table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Owner</th>
+                                <th>Configuration Name</th>
+                                <th>Experiment Name</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+    </metal:slot>
+</metal:macro>

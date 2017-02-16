@@ -1,0 +1,53 @@
+<metal:macro use-macro="master">
+    <metal:slot fill-slot="scripts">
+        <script tal:condition="exists:logs" type="text/javascript" id="logs_list" logs="${logs}">
+            var logs = $("#logs_list").attr("logs").replace(/'/g, '"');
+            logs = JSON.parse(logs);
+            $(document).ready(function() {
+                function makeUL(array) {
+                    var list = document.createElement('pre');
+                    for(var i in array) {
+                        var item = document.createElement('p');
+                        item.appendChild(document.createTextNode(array[i]));
+                        list.appendChild(item);
+                    }
+                    return list;
+                }
+
+                document.getElementById('logs').appendChild(makeUL(logs));
+            });
+        </script>
+    </metal:slot>
+    <metal:slot fill-slot="body">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">Sync</h1>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <!-- /.row -->
+        <div class="row">
+            <div class="col-lg-12" tal:condition="exists:logs">
+                <div class="alert alert-success alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <b>Succesfully synced!</b> Please see the logs below for more details.
+                </div>
+                <h4>Logs:</h4>
+                <div id="logs"></div>
+            </div>
+            <div class="col-lg-12" tal:condition="not:exists:logs">
+                <p>Please press the button below to sync the data from your local directory with the data
+                in the database. Please note, depending on how many new or changed statfiles are present,
+                this may take anywhere from one second to many minutes. <b>Do not refresh or close the page</b>,
+                you will be automatically redirected upon completion.</p>
+                <form action="/sync" method="post">
+                    <button type="submit" onclick="getElementById('loaderGif').style.display = 'block'" class="btn btn-primary btn-lg"><i class="fa fa-refresh"></i> Sync</button>
+                </form>
+                <div id="loaderGif" style="display: none; margin-top: 20px;">
+                    <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
+                    <p>Syncing...</p>
+                </div>
+            </div>
+        </div>
+    </metal:slot>
+</metal:macro>

@@ -1,0 +1,53 @@
+<metal:macro use-macro="master">
+    <metal:slot fill-slot="scripts">
+        <script tal:condition="exists:logs" type="text/javascript" id="logs_list" logs="${logs}">
+            var logs = $("#logs_list").attr("logs").replace(/'/g, '"');
+            logs = JSON.parse(logs);
+            $(document).ready(function() {
+                function makeUL(array) {
+                    var list = document.createElement('pre');
+                    for(var i in array) {
+                        var item = document.createElement('p');
+                        item.appendChild(document.createTextNode(array[i]));
+                        list.appendChild(item);
+                    }
+                    return list;
+                }
+
+                document.getElementById('logs').appendChild(makeUL(logs));
+            });
+        </script>
+    </metal:slot>
+    <metal:slot fill-slot="body">
+        <div class="row">
+            <div class="col-lg-12">
+                <h1 class="page-header">Delete</h1>
+            </div>
+            <!-- /.col-lg-12 -->
+        </div>
+        <!-- /.row -->
+        <div class="row">
+            <div class="col-lg-12" tal:condition="exists:logs">
+                <div class="alert alert-success alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    <b>Succesfully deleted!</b> Please see the logs below for more details.
+                </div>
+                <h4>Logs:</h4>
+                <div id="logs"></div>
+            </div>
+            <div class="col-lg-12" tal:condition="not:exists:logs">
+                <p>Please press the button below to delete <i>all</i> data from the database. Please note that this action
+                    does <i>not</i> delete the database itself, only the data within, and does <i>not</i> delete the
+                    actual statfiles. <b>Do not refresh or close the page</b>, you will be automatically redirected
+                    upon completion.</p>
+                <form action="/delete" method="post">
+                    <button type="submit" onclick="if (confirm('Are you sure you want to wipe the database?')) { getElementById('loaderGif').style.display = 'block'; return true; } else { return false; }" class="btn btn-primary btn-lg"><i class="fa fa-trash-o"></i> Delete</button>
+                </form>
+                <div id="loaderGif" style="display: none; margin-top: 20px;">
+                    <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
+                    <p>Syncing...</p>
+                </div>
+            </div>
+        </div>
+    </metal:slot>
+</metal:macro>
