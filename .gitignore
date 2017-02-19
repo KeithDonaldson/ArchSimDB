@@ -2,3 +2,8 @@ revisions/*
 proj.egg-info/*
 .idea/*
 MANIFEST.in
+db/*
+*.pyc
+__pycache__/*
+build/*
+dist/*
