@@ -1,4 +1,0 @@
-<metal:macro use-macro="master">
-    <metal:slot fill-slot="body">
-    </metal:slot>
-</metal:macro>
