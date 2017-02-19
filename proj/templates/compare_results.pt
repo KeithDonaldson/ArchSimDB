@@ -358,8 +358,8 @@
             $('#generate_shareable_url').click(function() {
                 $('#shareable_url_modal').modal('show');
                 if (!data.from_permalink) {
-                    var stats = data.stats.join().trim().replace(/\//g, ':');
-                    var apps = data.apps.join().trim().replace(/\//g, ':');
+                    var stats = data.stats.join().trim().replace(/\//g, ';');
+                    var apps = data.apps.join().trim().replace(/\//g, ';');
 
                     var curl = window.location.href;
 

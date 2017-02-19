@@ -10,6 +10,7 @@ requires = [
     'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'waitress',
+    'pymongo'
     ]
 
 tests_require = [

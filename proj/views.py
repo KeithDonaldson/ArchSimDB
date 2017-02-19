@@ -117,8 +117,8 @@ def delete(request):
         return {}
 
 
-@view_config(route_name='query', renderer='templates/query.pt')
-def query(request):
+@view_config(route_name='view', renderer='templates/view.pt')
+def view(request):
     db_actions = DatabaseActions()
     all_experiments = db_actions.get(request, 'experiments')
     exp_dict = [dict(pn) for pn in all_experiments]
@@ -164,8 +164,8 @@ def get_hierarchy(request):
 
 @view_config(route_name='compare_results_permalink', renderer='templates/compare_results.pt')
 def compare_results_permalink(request):
-    stats = request.matchdict['stats'].replace(':', '/').split(',')
-    apps = request.matchdict['apps'].replace(':', '/').split(',')
+    stats = request.matchdict['stats'].replace(';', '/').split(',')
+    apps = request.matchdict['apps'].replace(';', '/').split(',')
 
     data = {'stats': stats, 'apps': apps}
 
