@@ -1,13 +1,26 @@
 import os
-import logging
 import hashlib
 import re
 from datetime import datetime
 from .reader import Reader
 from .dbaccess import DatabaseActions
+import configparser
+from run import here
 
 
 class Scanner:
+    """
+    Provides functionality to scan through a directory, reading and writing
+    files within that directory, and preparing the read data for upload.
+
+    Attributes:
+        reader: An instance of the Reader class
+        db_actions: An instance of the DatabaseActions class
+        statfile_metadata: A dictionary to store metadata from a given statfile
+        checksums: A dictionary of checksums (md5 hashes) for the statfiles found
+        list_of_all_statfile_data: A list containing the parsed statfile data for all files found
+        logs: A list containing the logs generated from the scanning process
+    """
 
     def __init__(self):
         self.reader = Reader()
@@ -17,15 +30,31 @@ class Scanner:
         self.list_of_all_statfile_data = []
         self.logs = []
 
-        self.working_path = '/home/keith/Documents/statfiles/s1319624/'
+        config = configparser.ConfigParser()
+        config.read_file(open(os.path.join(here, 'development.ini')))
+
+        self.working_path = config.get('app:config', 'filespath')
 
         if self.working_path[-1] == '/':
             self.working_path = self.working_path[:-1]
 
     def scanner(self):
+        """
+        Walks through a directory and finds all statfiles and ArchSimDB files. Checks against the
+        `.archsimdb_tracking_data` file to determine whether found files are new, changed, or
+        unchanged and takes the necessary action.
+
+        :return: A dictionary containing all of the parsed statfile data and logs
+        :rtype: dict
+        """
+
         initiated = False
     
         for dirpath, dirnames, filenames in os.walk(self.working_path):
+
+            # On the first pass, read all of the known statfiles and their respective checksums from the
+            # `.archsimdb_tracking_data` file, and write a new tracking file.
+
             if not initiated:
                 self.statfile_metadata['_sim_owner'] = dirpath.split('/')[-1]
                 meta_filepath = dirpath + '/.archsimdb_tracking_data'
@@ -46,9 +75,13 @@ class Scanner:
                                 "# Last updated: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n\n")
 
                 initiated = True
+
+            # For every statfile found, determine whether it is new, changed, or unchanged. This is done by md5 hasing
+            # the statfile and comparing it against the `checksums` dictionary. If it is new or changed, the file is
+            # handed over to the `prepare_input` method.
     
             for file in filenames:
-                if file != ".archsimdb_tracking_data" and file != ".archsimdb_composite_stats":
+                if not file.startswith(".archsimdb"):
                     filepath = dirpath + '/' + file
                     statfile = open(filepath, 'rb')
 
@@ -59,12 +92,12 @@ class Scanner:
 
                     if filepath not in self.checksums:
                         meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
-                        self.prepare_input(filepath)
                         self.logs.append("Found new file at " + filepath)
+                        self.prepare_input(filepath)
                     elif self.checksums.get(filepath) != self.hashfile(statfile, hashlib.md5()):
                         meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
-                        self.prepare_input(filepath)
                         self.logs.append("Found changed file at " + filepath)
+                        self.prepare_input(filepath)
                     else:
                         meta_file.write(filepath + " " + self.checksums.get(filepath) + "\n")
                         self.logs.append("Found unchanged file at " + filepath)
@@ -75,8 +108,17 @@ class Scanner:
         return {'statfile_data': statfile_data, 'logs': self.logs}
 
     def get_composite_stats(self):
+        """
+        Returns the composite stats found in `.archsimdb_composite_stats`
+
+        :return: A dictionary containing the semi-parsed composite stats
+        :rtype dict
+        """
+
         composite_stats = {}
         line_number = 0
+
+        # If the composite stats file exists, attempt to parse each line.
 
         try:
             composite_stats_filepath = self.working_path + '/.archsimdb_composite_stats'
@@ -95,7 +137,7 @@ class Scanner:
         except FileNotFoundError:
             self.logs.append("No composite stats file found")
 
-        return {'stats': composite_stats, 'logs': self.logs}
+        return {'stats': composite_stats}
 
     def test_equation(self, composite_stat_equation, line_number):
         """
@@ -108,7 +150,8 @@ class Scanner:
         :param line_number: The line number of the current composite stat
         :type line_number: int
 
-        :return: bool
+        :return: Whether the equation parsed or not with dummy variables
+        :rtype: bool
         """
 
         variables = re.sub('{.*?}', '1', composite_stat_equation).strip()  # Replace all variables with 1
@@ -126,7 +169,7 @@ class Scanner:
         """
         Deletes the `.archsimdb_tracking_data` file
 
-        :return: logs
+        :return None
         """
 
         meta_filepath = self.working_path + '/.archsimdb_tracking_data'
@@ -154,10 +197,14 @@ class Scanner:
         self.statfile_metadata['_sim_date'] = datetime.fromtimestamp(os.path.getmtime(filepath))
 
         parsed_data = self.reader.load(filepath)
-        for key, value in self.statfile_metadata.items():
-            parsed_data[key] = value
 
-        self.list_of_all_statfile_data.append(parsed_data)
+        if parsed_data is not None:
+            for key, value in self.statfile_metadata.items():
+                    parsed_data[key] = value
+
+            self.list_of_all_statfile_data.append(parsed_data)
+        else:
+            self.logs.append("Failed to parse file at " + filepath)
 
     @staticmethod
     def hashfile(afile, hasher, blocksize=65536):
@@ -174,8 +221,9 @@ class Scanner:
         :type blocksize: int
 
         :return: A string representing the hash
-        :type: str
+        :rtype: str
         """
+
         buf = afile.read(blocksize)
         while len(buf) > 0:
             hasher.update(buf)

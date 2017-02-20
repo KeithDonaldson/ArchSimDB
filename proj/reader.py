@@ -1,11 +1,14 @@
-import json
 import logging
+import json
 
 
 class Reader:
+    """
+    Provides functionality to read from uploaded files.
+    """
 
     @staticmethod
-    def load(input_filepath, logging_level="logging.WARNING"):
+    def load(input_filepath, logging_level="logging.ERROR"):
         """
         Load, read, and parse a file.
 
@@ -15,20 +18,18 @@ class Reader:
         :param logging_level: The level of logging for the parser based on logging package.
         :type: str
 
-        :return: A python dictionary with the parsed file data
-        :type: dict
+        :return: A dictionary with the parsed file data
+        :rtype: dict
         """
 
-        # Initialise logging and the Parser object
-
+        # - Initialise logging and the Parser object
         logging.basicConfig(filemode='w', level=logging_level)
         parser = Parser()
 
-        # Open the given file in read mode, split the lines, and feed that to the parser.
-
+        # - Open the given file in read mode, split the lines, and feed that to the parser.
         input_file = open(input_filepath, 'r')
-        lines = input_file.read().splitlines()
-        parsed_data = parser.parse_flexus_statfile(lines)
+        file = input_file.read()
+        parsed_data = parser.parse(file)
 
         return parsed_data
 
@@ -48,6 +49,37 @@ class Parser:
         self.output_data = {}
         self.line_number = 0
 
+    def parse(self, file):
+        """
+        Parses a statfile
+
+        :param file: The read input statfile
+        :type file: str
+
+        :return: A dictionary with parsed file data
+        :rtype: dict
+        """
+
+        lines = file.splitlines()
+        file_type = self.determine_filetype(lines)
+
+        if file_type == "Flexus":
+            try:
+                return self.parse_flexus_statfile(lines)
+            except ParserException as e:
+                logging.error("ERROR: Could not parse statfile (read as Flexus), see error below:")
+                logging.error(e.msg)
+                return None
+        elif file_type == "JSON":
+            try:
+                return self.parse_json(file)
+            except json.decoder.JSONDecodeError as e:
+                logging.error("ERROR: Cannot parse statfile (read as JSON), see error below:")
+                logging.error(e.msg)
+                return None
+        else:
+            logging.error("Unknown filetype")
+
     def parse_flexus_statfile(self, lines):
         """
         Parse a statfile from Flexus Simulator.
@@ -55,19 +87,19 @@ class Parser:
         :param lines: The lines of the read file
         :type: list
 
-        :return: A python dictionary with the parsed file data
+        :return: A dictionary with the parsed file data
         :type: dict
         """
 
         self.input_data = lines
 
-        # Deal with the first line, always 'sum' or 'all'.
+        # - Deal with the first line, always 'sum' or 'all'.
 
         if self.input_data[0] != "sum" and self.input_data[0] != "all":
             logging.error("No 'sum' or 'all' found")
             raise ParserException("Sum or all not included on line 1, found '" + self.input_data[0] + "'")
 
-        line_type = self.next_type()
+        line_type = self.flexus_next_type()
         self.line_number += 1
 
         # The main loop of the parser. The class variable 'line_number' gets updated by the
@@ -81,7 +113,7 @@ class Parser:
 
         while self.line_number != len(lines):
 
-            next_line_type = self.next_type()
+            next_line_type = self.flexus_next_type()
 
             if line_type == "empty":
                 pass
@@ -89,30 +121,30 @@ class Parser:
                 break
             elif line_type == "ko":
                 if next_line_type == "bs":
-                    self.parse_table_bs()
+                    self.flexus_parse_table_bs()
                 elif next_line_type == "cpv":
-                    self.parse_table_cpv()
+                    self.flexus_parse_table_cpv()
                 else:
-                    self.parse_novalue()
+                    self.flexus_parse_novalue()
             elif line_type == "kv":
                 if next_line_type == "bs":
-                    self.parse_table_bs()
+                    self.flexus_parse_table_bs()
                 elif next_line_type == "cpv":
-                    self.parse_table_cpv()
+                    self.flexus_parse_table_cpv()
                 else:
-                    self.parse_keyval()
+                    self.flexus_parse_keyval()
             else:
                 logging.error("Unexpected token found")
                 raise ParserException("Unexpected token type on line " + str(self.line_number))
 
-            line_type = self.next_type()
+            line_type = self.flexus_next_type()
             self.line_number += 1
 
         return self.output_data
 
-    def next_type(self):
+    def flexus_next_type(self):
         """
-        Find the type of the next line.
+        Flexus helper: Finds the type of the next line.
 
         :return: The type of the next line
         :type: str
@@ -124,7 +156,7 @@ class Parser:
         try:
             line = self.input_data[self.line_number+1].split()
         except IndexError:
-            return "eof"  # End of File
+            return "eof"                         # End of File
 
         # There are five types of lines we can expect from Flexus data:
         #   'empty': An empty line,
@@ -136,19 +168,19 @@ class Parser:
         # with the value parsed as the last item on the line and the key as everything prior.
 
         if len(line) == 0:
-            return "empty"  # Empty
+            return "empty"                       # Empty
         if len(line) == 1:
-            return "ko"  # Key only
+            return "ko"                          # Key only
         elif line[0] == "Bucket" and line[1] == "Size":
-            return "bs"  # Bucket size
+            return "bs"                          # Bucket size
         elif line[0] == "Count" and line[1] == "Pct" and line[2] == "Value":
-            return "cpv"  # Count Pct Value
+            return "cpv"                         # Count Pct Value
         else:
-            return "kv"  # Key value
+            return "kv"                          # Key value
 
-    def parse_keyval(self):
+    def flexus_parse_keyval(self):
         """
-        Parse a key-value pair from the Flexus statfile.
+        Flexus helper: Parses a key-value pair from the Flexus statfile.
 
         :return: None
         """
@@ -165,9 +197,9 @@ class Parser:
         else:
             self.output_data[key] = val
 
-    def parse_novalue(self):
+    def flexus_parse_novalue(self):
         """
-        Parse a key with no value from the Flexus statfile.
+        Flexus helper: Parses a key with no value from the Flexus statfile.
 
         :return: None
         """
@@ -178,14 +210,14 @@ class Parser:
 
         self.output_data[key] = -1
 
-    def parse_table_cpv(self):
+    def flexus_parse_table_cpv(self):
         """
-        Parse a Count/Pct/Value table.
+        Flexus helper: Parses a Count/Pct/Value table.
 
         :return: None
         """
 
-        # The key for the whole table is on the current line and is stored in 'key'
+        # - The key for the whole table is on the current line and is stored in 'key'
 
         key = self.input_data[self.line_number].strip()
 
@@ -200,7 +232,7 @@ class Parser:
             try:
                 inside_key = cpv_line.split()[2]  # The "Value" column
             except IndexError:
-                logging.warning("100.00% issue caught")
+                logging.debug("100.00% issue caught")
                 inside_key = cpv_line.split()[1]  # The "Value" column
 
             # First if statement: If we have hit the dashes, the data we need has ended.
@@ -229,16 +261,16 @@ class Parser:
         # so we have a nested dictionary here.
 
         self.output_data[key] = table_data
-        self.line_number += 3  # Skip the summation lines
+        self.line_number += 3                    # Skip the summation lines
 
-    def parse_table_bs(self):
+    def flexus_parse_table_bs(self):
         """
-        Parse a Bucket/Size table.
+        Flexus helper: Parses a Bucket/Size table.
 
         :return: None
         """
 
-        # The key for the whole table is on the current line and is stored in 'key'
+        # - The key for the whole table is on the current line and is stored in 'key'
 
         key = self.input_data[self.line_number].strip()
 
@@ -256,8 +288,8 @@ class Parser:
             if len(bs_line) != 2:
                 break
 
-            inside_key = bs_line[0].strip()  # The "Bucket" column
-            inside_val = bs_line[1]  # The "Size" column
+            inside_key = bs_line[0].strip()      # The "Bucket" column
+            inside_val = bs_line[1]              # The "Size" column
             table_data[inside_key] = int(inside_val)
 
             logging.debug("Line #: {0}\t| Type: BS | Key: {1} | Inside Key: {2} | Inside Value: {3}".format(
@@ -269,6 +301,34 @@ class Parser:
         # so we have a nested dictionary here.
 
         self.output_data[key] = table_data
+
+    @staticmethod
+    def parse_json(file):
+        """
+        Parses a statfile in JSON format
+
+        :return: A dictionary with the parsed data
+        :rtype: dict
+        """
+
+        return json.loads(file)
+
+    @staticmethod
+    def determine_filetype(lines):
+        """
+        Provides logic to determine the filetype for the statfile
+
+        :param lines: The lines of the read file
+        :type lines: list
+
+        :return: The filetype
+        :rtype: str
+        """
+
+        if lines[0] == "sum" or lines[0] == "all":  # Flexus
+            return "Flexus"
+        else:
+            return "JSON"
 
 
 class ParserException(Exception):

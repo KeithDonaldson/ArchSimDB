@@ -1,1 +1,1 @@
-sys-L1d-HitPercentage = {sys-L1d-ProfileHit} / ({sys-L1d-ProfileMiss} + {sys-L1d-ProfileHit})
+sys-L1d-HitPercentageagdf ; {sys-L1d-ProfileHit} / ({sys-L1d-ProfileMiss} + {sys-L1d-ProfileHit})

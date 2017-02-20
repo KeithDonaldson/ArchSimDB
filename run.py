@@ -5,6 +5,8 @@ import atexit
 import time
 import os.path
 
+here = os.path.abspath(os.path.dirname(__file__))
+
 
 def set_config(args):
     """
@@ -21,7 +23,7 @@ def set_config(args):
 
     # - Validate and set Statfile Filepath
     if os.path.exists(args.filespath[0]):
-        config.set('app:config', 'filespath', args.filespath[0])
+        config.set('app:config', 'filespath', os.path.join(here, args.filespath[0]))
     else:
         print(">! ERROR: Given filepath " + args.filespath[0] + " does not exist.")
         print(">> Exiting, failed to run.")
@@ -57,7 +59,7 @@ def start_processes(args):
     atexit.register(end_processes, processes)
     skip = None
 
-    # - Mongod process
+    # - Create mongod process
     print("-" * 30)
     print(">> Attempting to start mongod on dbpath " + args.dbpath[0])
     p_mongod = subprocess.Popen(['mongod', '--dbpath', args.dbpath[0]], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -81,14 +83,11 @@ def start_processes(args):
 
     processes.append(['mongod', p_mongod])
     print(">> mongod started successfully (pid: " + str(p_mongod.pid) + ")")
-    # - End mongod process
 
-    # - pserve process
+    # - Create pserve process
     print("-" * 30)
     print(">> Attempting to start pserve")
-    p_pserve = subprocess.Popen(['pserve', '--reload', 'development.ini'], stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-
+    p_pserve = subprocess.Popen(['pserve', '--reload', 'development.ini'])
     time.sleep(2)
 
     if p_pserve.returncode is None:              # Program hasn't returned
@@ -99,8 +98,8 @@ def start_processes(args):
 
     processes.append(['pserve', p_pserve])
     print(">> pserve started successfully (pid: " + str(p_pserve.pid) + ")")
-    # - End pserve process
 
+    # - At this point, all processes should be running
     print("-" * 30)
     print(">> Processes started successfully, ArchSimDB is now be available at http://localhost:" + str(args.port[0]))
     if skip:
