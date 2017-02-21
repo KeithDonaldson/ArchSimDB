@@ -18,32 +18,12 @@
         <script src="${request.static_url('proj:static/vendor/multiselect/multiselect.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/jstree/dist/jstree.min.js')}"></script>
 
+        <!-- Custom JavaScript -->
         <script type="text/javascript" id="data" data="${hierarchy}">
             jQuery(document).ready(function($) {
                 var data = JSON.parse($("#data").attr("data").replace(/'/g, '"'));
 
-                var $select = $('<select name="from" id="search" class="form-control" size="8" multiple="multiple">');
-                $select.appendTo("#fromfield");
-
-                for (var exp in data) {
-                    for (var conf in data[exp]) {
-                        var $optgroup = $("<optgroup>", {label: exp + ' -> ' + conf});
-                        $optgroup.appendTo($select);
-                        for (var app in data[exp][conf]) {
-                            var $option = $("<option>", {text: app, value: exp + '/' + conf + '/' + app});
-                            $option.appendTo($optgroup);
-                        }
-                    }
-                }
-
-                $('#search').multiselect({
-                    search: {
-                        left: '<input type="text" name="q" class="form-control" style="margin-bottom: 10px;" placeholder="Search..." />',
-                        right: '<input type="text" name="q" class="form-control" style="margin-bottom: 10px;" placeholder="Search..." />',
-                    },
-                    keepRenderingSort: true
-                });
-
+                // Instantiate the fields selector
                 $('#fields').multiselect({
                     search: {
                         left: '<input type="text" name="q" class="form-control" style="margin-bottom: 10px;" placeholder="Search..." />',
@@ -52,6 +32,7 @@
                     keepRenderingSort: true
                 });
 
+                // Insantiate the hierarchical database tree
                 $("#tree").jstree({
                     "plugins": ["json_data", "checkbox", "search"],
                     "core": {
@@ -68,20 +49,23 @@
                         "show_only_matches" : true
                     },
                 });
-            });
 
-            $(".search-input").keyup(function() {
-                var searchString = $(this).val();
-                $('#tree').jstree('search', searchString);
+                // Add a search bar to the tree
+                $(".search-input").keyup(function() {
+                    var searchString = $(this).val();
+                    $('#tree').jstree('search', searchString);
+                });
             });
 
             var submitted_apps;
 
+            // Called on submitting the chosen applications
             function submit_apps() {
                 var selectList = $("#fields");
                 var selectList_to = $("#fields_to");
                 var apps = $('#tree').jstree(true).get_selected()
 
+                // Applications start with a star in our jstree, so get all of them out.
                 for (var i = 0; i < apps.length; i++) {
                     if (apps[i][0] != '*') {
                         apps.splice(i, 1);
@@ -96,6 +80,7 @@
                 selectList.empty();
                 selectList_to.empty();
 
+                // Send a POST request to get all fields from the selected applications
                 $.post( "get/fields", { 'apps': apps }, function( data ) {
                     if (data != null) {
                         $("#select_rows").hide();
@@ -112,12 +97,14 @@
                 });
             };
 
+            // Called on submitting the chosen fields
             function submit_compare() {
                 var apps = submitted_apps;
                 var fields = document.getElementById('fields_to').options;
                 var fieldsList = []
                 var composite_used = false;
 
+                // Check if a composite stat was chosen
                 for (var i = 0; i < fields.length; i++) {
                     fieldsList.push(fields[i].value);
                     if (fields[i].value[0] == '$') {
@@ -125,6 +112,7 @@
                     }
                 }
 
+                // Request confirmation to calculate the composite stat
                 if (composite_used == true) {
                     if (confirm("This process uses Python's eval() method and trusts that your " +
                                     "composite stats are correct. Continue?") == true) {
@@ -139,6 +127,7 @@
                 form.attr("method", "post");
                 form.attr("action", '/compare/results');
 
+                // Prepare and set data
                 $.each(parameters, function(key, value) {
                     if ( typeof value == 'object' || typeof value == 'array' ){
                         $.each(value, function(subkey, subvalue) {

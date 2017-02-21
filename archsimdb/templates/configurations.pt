@@ -15,7 +15,23 @@
         <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
         <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
-        <script type="text/javascript" tal:content="string:var data=$configurations; $(document).ready(function() { $('#configuration_table').DataTable( {data: data, columns: [ {data: '_conf_name'}, {data: '_conf_owner'}, {data: '_exp_name'}, {data: '_conf_date'} ], responsive: true }); });"></script>
+        <!-- Custom JavaScript -->
+        <script type="text/javascript" id="data" data="${configurations}">
+            var data = JSON.parse($("#data").attr("data").replace(/'/g, '"'));
+
+            // Populate the table
+            $(document).ready(function() {
+                $('#configuration_table').DataTable({
+                    data: data,
+                    columns: [
+                        {data: '_conf_name'},
+                        {data: '_conf_owner'},
+                        {data: '_exp_name'},
+                        {data: '_conf_date'}
+                    ],
+                    responsive: true });
+            });
+        </script>
     </metal:slot>
 
     <metal:slot fill-slot="body">

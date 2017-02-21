@@ -10,6 +10,7 @@ requires = [
     'pyramid_chameleon',
     'pyramid_debugtoolbar',
     'waitress',
+    'pymongo'
     ]
 
 tests_require = [
@@ -19,8 +20,8 @@ tests_require = [
     ]
 
 setup(name='proj',
-      version='0.0',
-      description='proj',
+      version='0.1',
+      description='ArchSimDB',
       classifiers=[
           "Programming Language :: Python",
           "Framework :: Pyramid",

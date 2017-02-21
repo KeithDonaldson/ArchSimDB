@@ -5,8 +5,6 @@ import atexit
 import time
 import os.path
 
-here = os.path.abspath(os.path.dirname(__file__))
-
 
 def set_config(args):
     """
@@ -23,7 +21,8 @@ def set_config(args):
 
     # - Validate and set Statfile Filepath
     if os.path.exists(args.filespath[0]):
-        config.set('app:config', 'filespath', os.path.join(here, args.filespath[0]))
+        config.set('app:config', 'filespath', os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                                           args.filespath[0]))
     else:
         print(">! ERROR: Given filepath " + args.filespath[0] + " does not exist.")
         print(">> Exiting, failed to run.")
@@ -97,6 +96,8 @@ def start_processes(args):
         print_error('pserve', p_pserve_stdout, p_pserve_stderr)
 
     processes.append(['pserve', p_pserve])
+    print(">> NOTE: pserve reloads automatically whenever it encounters an error (unless fatal) or a file change. If "
+          "you see an error above, the web app may not have launched successfully but pserve still is still running.")
     print(">> pserve started successfully (pid: " + str(p_pserve.pid) + ")")
 
     # - At this point, all processes should be running
@@ -159,23 +160,24 @@ def print_error(process_name, stdout, stderr):
 if __name__ == '__main__':
 
     config = configparser.ConfigParser()
-    parser = argparse.ArgumentParser(description='Run ArchSimDB',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='Run ArchSimDB')
 
-    parser.add_argument('dbpath', type=str, nargs=1,
+    parser.add_argument('--dbpath', dest='dbpath', type=str, nargs=1, default=['db/'],
                         help='The absolute path to be used as the mongodb directory. If this is a first time '
-                             'setup, you will need to create an empty directory first for the mongo database.')
-    parser.add_argument('dbname', type=str, nargs=1,
+                             'setup, you will need to create an empty directory first for the mongo database. '
+                             '(Default: %(default)s. Type: %(type)s)')
+    parser.add_argument('--dbname', dest='dbname', type=str, nargs=1, default=['archsimdb'],
                         help='The name of your mongodb database to connect to. If one does not exist, it will be'
-                             'created with this name.')
-    parser.add_argument('filespath', type=str, nargs=1,
+                             'created with this name. (Default: %(default)s. Type: %(type)s)')
+    parser.add_argument('--filespath', dest='filespath', type=str, nargs=1, default=['statfiles/'],
                         help='The absolute path to a directory containing experiment directories. That is, the '
                              'directory in which there is a structure of `experiments/configurations/statfiles*` '
-                             'within.')
+                             'within. (Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--mongouri', dest='mongo_uri', type=str, nargs=1, default=['mongodb://localhost:27017/'],
-                        help='The uri that your mongo daemon is to run on.')
+                        help='The uri that your mongo daemon is to run on. (Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--port', dest='port', type=int, nargs=1, default=[6543], required=False,
-                        help='The port on localhost which ArchSimDB will run on.')
+                        help='The port on localhost which ArchSimDB will run on. '
+                             '(Default: %(default)s. Type: %(type)s)')
 
     arguments = parser.parse_args()
 

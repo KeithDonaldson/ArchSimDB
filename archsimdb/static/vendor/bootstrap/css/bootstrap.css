@@ -5968,6 +5968,11 @@ button.close {
   height: 50px;
   overflow: scroll;
 }
+@media (min-width: 992px) {
+  .modal-dialog {
+    width: 900px;
+  }
+}
 @media (min-width: 768px) {
   .modal-dialog {
     width: 600px;
@@ -5979,11 +5984,6 @@ button.close {
   }
   .modal-sm {
     width: 300px;
-  }
-}
-@media (min-width: 992px) {
-  .modal-lg {
-    width: 900px;
   }
 }
 .tooltip {

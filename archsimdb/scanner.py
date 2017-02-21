@@ -5,7 +5,7 @@ from datetime import datetime
 from .reader import Reader
 from .dbaccess import DatabaseActions
 import configparser
-from run import here
+import logging
 
 
 class Scanner:
@@ -31,7 +31,7 @@ class Scanner:
         self.logs = []
 
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(here, 'development.ini')))
+        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
 
         self.working_path = config.get('app:config', 'filespath')
 
@@ -126,8 +126,12 @@ class Scanner:
 
             for line in composite_stats_file.readlines():
                 line_number += 1
-                composite_stat_name = line.split('=')[0].strip()  # The left of the equals sign is the stat name
-                composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
+                try:
+                    composite_stat_name = line.split('=')[0].strip()  # The left of the equals sign is the stat name
+                    composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
+                except IndexError:
+                    self.logs.append("Failed to parse composite stat on line " + str(line_number))
+                    continue
 
                 if self.test_equation(composite_stat_equation, line_number):
                     composite_stats[composite_stat_name] = composite_stat_equation

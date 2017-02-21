@@ -9,20 +9,7 @@
         <link href="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
 
         <style>
-            #flot-tooltip {
-                font-size: 12px;
-                font-family: Verdana, Arial, sans-serif;
-                position: absolute;
-                display: none;
-                border: 2px solid;
-                padding: 2px;
-                background-color: #FFF;
-                opacity: 0.8;
-                -moz-border-radius: 5px;
-                -webkit-border-radius: 5px;
-                -khtml-border-radius: 5px;
-                border-radius: 5px;
-            }
+
         </style>
     </metal:slot>
 
@@ -59,9 +46,12 @@
 
             updateTables(data);
 
+            // Create a table for each stat and fill it
             function updateTables(data) {
                 $('#tables').empty();
                 for (var stat in data.stats) {
+
+                    // Add the title and table
                     $('#tables').append($('<h4>' + data.stats[stat] + '</h4>'));
                     $('#tables').append($('<table/>', {
                         id: 'table_' + stat,
@@ -70,6 +60,7 @@
                     }));
                     $('#tables').append($('<hr/>'));
 
+                    // Fill the table
                     $('#table_' + stat).DataTable({
                         data: data.data[data.stats[stat]],
                         columns: columns,
@@ -82,6 +73,8 @@
                         ],
                         aaSorting: [],
                         pageLength: 25,
+
+                        // Highlight the maximum value in a row with red text
                         rowCallback: function (row, data, index) {
                             if (data.length === 0) {
                                 return -1;
@@ -137,6 +130,9 @@
             $('#baseline').change(function() {
                 data_after_settings = JSON.parse(JSON.stringify(data));
                 var selected = parseInt($('#baseline').val())+1;
+
+                // For every column in every row in every table, change the data relative
+                // to a user-defined column.
                 if (selected != 0) {
                     for (var key in data_after_settings.data) {
                         var workloads = data_after_settings.data[key];
@@ -158,6 +154,8 @@
             // -- 2. DOWNLOADING DATA AS CSV
             $("#download_as_csv").click(function(){
                 var csv = "";
+
+                // Take the raw data and turn it into CSV
                 for (var key in data_after_settings.data) {
                     csv += key + ",";
                     var headings = data_after_settings.configs.join(",");
@@ -169,6 +167,7 @@
                     csv += "\n";
                 }
 
+                // Download the file
                 function downloadFile(fileName, urlData) {
                     var aLink = document.createElement('a');
                     aLink.download = fileName;
@@ -184,16 +183,19 @@
 
             // -- 3. GENERATE CHART
             $('#generate_chart').click(function() {
+
+                // Create a pop-up (modal) with an editable text box of raw data
+                // if the 'Advanced Edit' checkbox is checked
                 if ($('#advanced_graph_edit').is(':checked')) {
                     var stat = $('#generate_chart_stat').val();
 
                     $('#advanced_edit_modal').modal('show');
                     $('#advanced_edit_modal_textbox').val(data_after_settings.data[stat].join("\n"));
 
+                    // Replace nulls with 0 on click of the 'Replace Nulls with 0' button
                     $('#advanced_edit_modal_replace_nulls').on('click', function () {
                         var lines = $('#advanced_edit_modal_textbox').val().split(/\n/);
                         for (var i = 0; i < lines.length; i++) {
-                            console.log(lines[i])
                             lines[i] = lines[i].replace(/,,/g, ",0,")
                             if (lines[i][lines[i].length-1] == ',') {
                                 lines[i] = lines[i] + '0'
@@ -202,6 +204,7 @@
                         $('#advanced_edit_modal_textbox').val(lines.join("\n"));
                     });
 
+                    // Send the data to the `generateChart` function on click of the 'Submit' button
                     $("#advanced_edit_modal_submit").on("click", function () {
                         var lines = $('#advanced_edit_modal_textbox').val().split(/\n/);
                         var data = []
@@ -221,12 +224,13 @@
             });
 
             function generateChart(inputData) {
-                console.log(inputData)
+                $("#chart").empty();
                 $('#chart_modal').show();
                 $('#chart_modal').modal('show');
                 var stat = $('#generate_chart_stat').val();
                 var type = $('#generate_chart_type').val();
 
+                // Take the raw-data and reform it into the required format for Flot
                 var chart_list = [];
                 for (var x = 0; x < data_after_settings.configs.length; x++) {
                     var workload_data = inputData.data[stat];
@@ -240,6 +244,7 @@
 
                 var config_list = []
 
+                // Configure the graph depending on the type
                 for (var x = 0; x < data_after_settings.configs.length; x++) {
                     if (type == "bar") {
                         var config = {
@@ -255,6 +260,7 @@
                     config_list.push(config)
                 }
 
+                // More graph configuration
                 if (type == "bar") {
                     var chart_config = {
                         series: {
@@ -297,6 +303,7 @@
                     }
                 }
 
+                // Define what a tooltip looks like
                 function showTooltip(x, y, contents, z) {
                     $('<div id="flot-tooltip">' + contents + '</div>').css({
                         top: y - 30,
@@ -305,7 +312,10 @@
                     }).appendTo("#chart_modal").fadeIn(200);
                 }
 
+                // Plot the graph
                 $.plot("#chart", config_list, chart_config);
+
+                // Create a tooltip when hovering over a data point on the graph
                 $("#chart").bind("plothover", function (event, pos, item) {
                     if (item) {
                         if ((previousPoint != item.dataIndex) || (previousLabel != item.series.label)) {
@@ -328,6 +338,7 @@
                     }
                 });
 
+                // Makes the chart a canvas such that the graph image can be downloaded
                 html2canvas($('#chart'), {
                     onrendered: function (canvas) {
                         canvas_data = canvas.toDataURL();
@@ -376,12 +387,15 @@
     </metal:slot>
 
     <metal:slot fill-slot="body">
+        <!-- Title -->
         <div class="row">
             <div class="col-lg-12">
                 <h1 class="page-header">Compare Results</h1>
             </div>
         </div>
+        <!-- End Title -->
 
+        <!-- Settings Menu -->
         <div class="row">
             <div class="col-lg-12">
                 <div class="panel panel-primary">
@@ -436,7 +450,9 @@
                 </div>
             </div>
         </div>
+        <!-- End Settings Menu -->
 
+        <!-- Tables -->
         <div class="row">
             <div class="col-lg-12" tal:condition="exists:warnings">
                 <div class="alert alert-warning alert-dismissable">
@@ -450,6 +466,9 @@
             <div id="tables" class="col-lg-12">
             </div>
         </div>
+        <!-- End Tables -->
+
+        <!-- Chart Modal -->
         <div class="modal fade" id="chart_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -469,6 +488,9 @@
                 </div>
             </div>
         </div>
+        <!-- End Chart Modal -->
+
+        <!-- Advanced Graph Edit Modal -->
         <div class="modal fade" id="advanced_edit_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel2" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -487,6 +509,9 @@
                 </div>
             </div>
         </div>
+        <!-- End Advanced Graph Edit Modal -->
+
+        <!-- Generate Permalink Modal -->
         <div class="modal fade" id="shareable_url_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel3" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -510,5 +535,6 @@
                 </div>
             </div>
         </div>
+        <!-- End Generate Permalink Modal -->
     </metal:slot>
 </metal:macro>

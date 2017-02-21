@@ -19,7 +19,7 @@ class ViewTests(unittest.TestCase):
 
 class FunctionalTests(unittest.TestCase):
     def setUp(self):
-        from proj import main
+        from archsimdb import main
         app = main({})
         from webtest import TestApp
         self.testapp = TestApp(app)
