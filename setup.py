@@ -19,7 +19,7 @@ tests_require = [
     'pytest-cov',
     ]
 
-setup(name='proj',
+setup(name='archsimdb',
       version='0.1',
       description='ArchSimDB',
       classifiers=[
@@ -28,10 +28,10 @@ setup(name='proj',
           "Topic :: Internet :: WWW/HTTP",
           "Topic :: Internet :: WWW/HTTP :: WSGI :: Application",
       ],
-      author='',
-      author_email='',
-      url='',
-      keywords='web pyramid pylons',
+      author='Keith Donaldson',
+      author_email='contact@keithdonaldson.co.uk',
+      url='https://github.com/KeithDonaldson/ArchSimDB',
+      keywords='web pyramid pylons computer architecture simulator database',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,
@@ -41,6 +41,6 @@ setup(name='proj',
       install_requires=requires,
       entry_points="""\
       [paste.app_factory]
-      main = proj:main
+      main = archsimdb:main
       """,
       )

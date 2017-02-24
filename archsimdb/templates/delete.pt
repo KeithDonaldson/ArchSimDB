@@ -44,7 +44,7 @@
                     <button type="submit" onclick="if (confirm('Are you sure you want to wipe the database?')) { getElementById('loaderGif').style.display = 'block'; return true; } else { return false; }" class="btn btn-primary btn-lg"><i class="fa fa-trash-o"></i> Delete</button>
                 </form>
                 <div id="loaderGif" style="display: none; margin-top: 20px;">
-                    <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
+                    <img src="${request.static_url('archsimdb:static/loader.gif')}" alt="loading..." width="60px" />
                     <p>Syncing...</p>
                 </div>
             </div>

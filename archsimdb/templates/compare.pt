@@ -5,18 +5,18 @@
 
     <metal:slot fill-slot="head">
         <!-- DataTables CSS -->
-        <link href="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
-        <link href="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
-        <link href="${request.static_url('proj:static/vendor/jstree/dist/themes/default/style.min.css')}" rel="stylesheet"  />
+        <link href="${request.static_url('archsimdb:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
+        <link href="${request.static_url('archsimdb:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
+        <link href="${request.static_url('archsimdb:static/vendor/jstree/dist/themes/default/style.min.css')}" rel="stylesheet"  />
     </metal:slot>
 
     <metal:slot fill-slot="scripts">
         <!-- DataTables JavaScript -->
-        <script src="${request.static_url('proj:static/vendor/datatables/js/jquery.dataTables.min.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/multiselect/multiselect.min.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/jstree/dist/jstree.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables/js/jquery.dataTables.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/multiselect/multiselect.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/jstree/dist/jstree.min.js')}"></script>
 
         <!-- Custom JavaScript -->
         <script type="text/javascript" id="data" data="${hierarchy}">
@@ -183,7 +183,7 @@
         </div>
 
         <div id="loading_row" style="display: none; margin-top: 20px; text-align: center;" class="row">
-            <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
+            <img src="${request.static_url('archsimdb:static/loader.gif')}" alt="loading..." width="60px" />
             <p>Loading...</p>
         </div>
 

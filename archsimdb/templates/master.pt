@@ -12,16 +12,16 @@
     <title metal:define-slot="title">ArchSimDB v0.1</title>
 
     <!-- Bootstrap Core CSS -->
-    <link href="${request.static_url('proj:static/vendor/bootstrap/css/bootstrap.min.css')}" rel="stylesheet">
+    <link href="${request.static_url('archsimdb:static/vendor/bootstrap/css/bootstrap.min.css')}" rel="stylesheet">
 
     <!-- MetisMenu CSS -->
-    <link href="${request.static_url('proj:static/vendor/metisMenu/metisMenu.min.css')}" rel="stylesheet">
+    <link href="${request.static_url('archsimdb:static/vendor/metisMenu/metisMenu.min.css')}" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link href="${request.static_url('proj:static/dist/css/sb-admin-2.css')}" rel="stylesheet">
+    <link href="${request.static_url('archsimdb:static/dist/css/sb-admin-2.css')}" rel="stylesheet">
 
     <!-- Custom Fonts -->
-    <link href="${request.static_url('proj:static/vendor/font-awesome/css/font-awesome.min.css')}" rel="stylesheet" type="text/css">
+    <link href="${request.static_url('archsimdb:static/vendor/font-awesome/css/font-awesome.min.css')}" rel="stylesheet" type="text/css">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -119,16 +119,16 @@
     <!-- /#wrapper -->
 
     <!-- jQuery -->
-    <script src="${request.static_url('proj:static/vendor/jquery/jquery.min.js')}"></script>
+    <script src="${request.static_url('archsimdb:static/vendor/jquery/jquery.min.js')}"></script>
 
     <!-- Bootstrap Core JavaScript -->
-    <script src="${request.static_url('proj:static/vendor/bootstrap/js/bootstrap.min.js')}"></script>
+    <script src="${request.static_url('archsimdb:static/vendor/bootstrap/js/bootstrap.min.js')}"></script>
 
     <!-- Metis Menu Plugin JavaScript -->
-    <script src="${request.static_url('proj:static/vendor/metisMenu/metisMenu.min.js')}"></script>
+    <script src="${request.static_url('archsimdb:static/vendor/metisMenu/metisMenu.min.js')}"></script>
 
     <!-- Custom Theme JavaScript -->
-    <script src="${request.static_url('proj:static/dist/js/sb-admin-2.js')}"></script>
+    <script src="${request.static_url('archsimdb:static/dist/js/sb-admin-2.js')}"></script>
 
     <metal:slot metal:define-slot="scripts" />
 

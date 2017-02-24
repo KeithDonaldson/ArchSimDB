@@ -44,7 +44,7 @@
                     <button type="submit" onclick="getElementById('loaderGif').style.display = 'block'" class="btn btn-primary btn-lg"><i class="fa fa-refresh"></i> Sync</button>
                 </form>
                 <div id="loaderGif" style="display: none; margin-top: 20px;">
-                    <img src="${request.static_url('proj:static/loader.gif')}" alt="loading..." width="60px" />
+                    <img src="${request.static_url('archsimdb:static/loader.gif')}" alt="loading..." width="60px" />
                     <p>Syncing...</p>
                 </div>
             </div>

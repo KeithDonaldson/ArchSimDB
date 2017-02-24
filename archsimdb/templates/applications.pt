@@ -5,15 +5,15 @@
 
     <metal:slot fill-slot="head">
         <!-- DataTables CSS -->
-        <link href="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
-        <link href="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
+        <link href="${request.static_url('archsimdb:static/vendor/datatables-plugins/dataTables.bootstrap.css')}" rel="stylesheet">
+        <link href="${request.static_url('archsimdb:static/vendor/datatables-responsive/dataTables.responsive.css')}" rel="stylesheet">
     </metal:slot>
 
     <metal:slot fill-slot="scripts">
         <!-- DataTables JavaScript -->
-        <script src="${request.static_url('proj:static/vendor/datatables/js/jquery.dataTables.min.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
-        <script src="${request.static_url('proj:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables/js/jquery.dataTables.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables-plugins/dataTables.bootstrap.min.js')}"></script>
+        <script src="${request.static_url('archsimdb:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
         <!-- Custom JavaScript -->
         <script type="text/javascript" id="data" data="${applications}">
