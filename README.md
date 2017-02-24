@@ -26,18 +26,18 @@ The webapp should now be running locally, with the default address being [http:/
 
 If the `run.py` script is giving you trouble, it is likely encountering an unexpected issue. In setup mode, the script performs the following tasks in this order, with non-setup mode skipping steps 1-4:
 
-1. Attempts to create the directory at the path given by the --dbpath argument (default: 'db/') by running `os.mkdir()`.
+1. Attempts to create the directory at the path given by the --dbpath argument (default: 'db/') by running `os.mkdir({'db/'})`.
 2. Attempts to create the virtual environment at the path given by the --envpath argument (default: 'env/') by running `python3 -m venv {env/}`.
 3. Attempts to install `setuptools` by running `pip3 install setuptools`.
 4. Attempts to install all Python dependencies by running `pip3 install -e .`.
 5. Attempts to start a mongod process with `--dbpath` given by the --dbpath argument (default: 'db/') by running `mongod --dbpath {db/}`. 
 6. Attempts to start a pserve process by running `pserve --reload development.ini`.
 
-All of the Python/pip/pserve commands (steps 2,3,4,6) are run with respect to the virtual environment created, and as such you should never require super user permissions.
+Steps 3, 4, and 6 are run with respect to the virtual environment created, and as such you should never require super user permissions.
 
 Step 5 is the only process that runs externally from this project, and as such is where the problems are likely to occur. Common errors are that the process is already running (i.e. you have a mongod instance already) or that your --dbpath directory doesn't exist (will only happen if step 1 encountered an error and you skipped). 
 
-As a last resort, you can run the commands listed above (steps 1-6) manually from the command line. Note that for all of the Python/pip/pserve commands (steps 2,3,4,6) will need to start with your virtual environment `bin` path, e.g. `pserve --reload development.ini` becomes `env/bin/pserve --reload development.ini` and `pip3 install setuptools` becomes `env/bin/pip3 install setuptools`.
+As a last resort, you can run the commands listed above (steps 1-6) manually from the command line. Note that steps 3, 4, and 6 will need to start with your virtual environment `bin` path, e.g. `pserve --reload development.ini` becomes `env/bin/pserve --reload development.ini` and `pip3 install setuptools` becomes `env/bin/pip3 install setuptools`.
 
 Other issues? Contact me at contact@keithdonaldson.co.uk.
 
