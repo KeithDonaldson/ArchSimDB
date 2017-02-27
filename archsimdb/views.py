@@ -34,12 +34,16 @@ log = logging.getLogger(__name__)
 # --- Human-visible pages --- #
 # --------------------------- #
 
-
 # - MASTER TEMPALTE
 @subscriber(IBeforeRender)
 def globals_factory(event):
     master = get_renderer('templates/master.pt').implementation()
     event['master'] = master
+
+    config = configparser.ConfigParser()
+    config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
+
+    event['user'] = config.get('app:config', 'user')
 
 
 # - INDEX PAGE
@@ -109,9 +113,12 @@ def data(request):
     raw_data = db_actions.get(request, 'applications', {'_exp_name': _exp_name, '_conf_name': _conf_name,
                                                         '_sim_name': _sim_name})
 
-    dict_data = [dict(pn) for pn in raw_data]
-
-    return {'data': dumps(dict_data), '_sim_name': dict_data[0].get('_sim_name')[:20]}
+    try:
+        dict_data = [dict(pn) for pn in raw_data][0]
+        sim_name = dict_data.get('_sim_name')[:20]
+        return {'data': dumps(dict_data), '_sim_name': sim_name}
+    except IndexError:
+        return {'data': {}, '_sim_name': 'Not Found'}
 
 
 # - LIST OF EXPERIMENTS PAGE
@@ -206,7 +213,7 @@ def compare(request):
     db_actions = DatabaseActions()
     data_hierarchy = db_actions.get_hierarchy(request)
 
-    return {'hierarchy': dumps(data_hierarchy, sort_keys=True)}
+    return {'hierarchy': dumps(data_hierarchy)}
 
 
 # - COMPARE RESULTS PAGE (FROM PERMALINK)

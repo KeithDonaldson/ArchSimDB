@@ -206,15 +206,15 @@ class DatabaseActions:
 
         exps = self.get(request, 'experiments', projection=['_exp_name', '_exp_date'])
         exp_dict = [dict(pn) for pn in exps]
-        exp_dict.sort(key=operator.itemgetter('_exp_date'))
+        exp_dict = sorted(exp_dict, key=lambda k: k['_exp_date'], reverse=True)
 
         confs = self.get(request, 'configurations', projection=['_conf_name', '_conf_date', '_exp_name'])
         conf_dict = [dict(pn) for pn in confs]
-        conf_dict.sort(key=operator.itemgetter('_conf_date'))
+        conf_dict = sorted(conf_dict, key=lambda k: k['_conf_date'],reverse=True)
 
         apps = self.get(request, 'applications', projection=['_sim_name', '_sim_date', '_conf_name', '_exp_name'])
         app_dict = [dict(pn) for pn in apps]
-        app_dict.sort(key=operator.itemgetter('_sim_date'))
+        app_dict = sorted(app_dict, key=lambda k: k['_sim_date'], reverse=True)
 
         hierarchy = []
 

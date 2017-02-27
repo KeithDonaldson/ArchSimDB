@@ -19,20 +19,22 @@ def set_config(args):
     print(">> Checking and setting arguments provided")
     config.read_file(open('development.ini'))
 
-    # - Validate and set Statfile Filepath
-    if os.path.exists(args.filespath[0]):
-        config.set('app:config', 'filespath', os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                                           args.filespath[0]))
+    # - Validate and set User and Filespath
+    final_path = os.path.join(args.filespath[0], args.user)
+
+    if os.path.exists(final_path):
+        config.set('app:config', 'filespath', os.path.join(os.path.abspath(os.path.dirname(__file__)), final_path))
+        config.set('app:config', 'user', args.user)
     else:
-        print(">! ERROR: Given filepath " + args.filespath[0] + " does not exist.")
+        print(">! ERROR: Given path " + final_path + " does not exist.")
         print(">> Exiting, failed to run.")
         exit()
 
     # - Set Mongouri
     if args.mongo_uri[0][-1] != '/':
-        config.set('app:main', 'mongo_uri', args.mongo_uri[0] + '/' + args.dbname[0])
+        config.set('app:main', 'mongo_uri', args.mongo_uri[0] + '/' + args.dbname[0] + '_' + args.user)
     else:
-        config.set('app:main', 'mongo_uri', args.mongo_uri[0] + args.dbname[0])
+        config.set('app:main', 'mongo_uri', args.mongo_uri[0] + args.dbname[0] + '_' + args.user)
 
     # - Set Port
     config.set('server:main', 'port', str(args.port[0]))
@@ -95,8 +97,7 @@ def start_processes(args):
         if p_makevenv.returncode == 0:
             print(">> Venv created successfully at " + envpath)
         else:
-            p_makevenv_stdout, p_makevenv_stderr = p_makevenv.communicate()[:2]
-            print_error('python -m venv ' + envpath, p_makevenv_stdout, p_makevenv_stderr)
+            print_error('python -m venv ' + envpath, p_makevenv.stdout, p_makevenv.stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -111,8 +112,7 @@ def start_processes(args):
         if p_installsetuptools.returncode == 0:
             print(">> setuptools installed successfully")
         else:
-            p_installsetuptools_stdout, p_installsetuptools_stderr = p_installsetuptools.communicate()[:2]
-            print_error('pip3 install setuptools ' + envpath, p_installsetuptools_stdout, p_installsetuptools_stderr)
+            print_error('pip3 install setuptools ' + envpath, p_installsetuptools.stdout, p_installsetuptools.stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -127,8 +127,7 @@ def start_processes(args):
         if p_installdependencies.returncode == 0:
             print(">> Dependencies installed successfully")
         else:
-            p_installdependencies_stdout, p_installdependencies_stderr = p_installdependencies.communicate()[:2]
-            print_error('pip3 install -e .' + envpath, p_installdependencies_stdout, p_installdependencies_stderr)
+            print_error('pip3 install -e .' + envpath, p_installdependencies.stdout, p_installdependencies.stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -225,7 +224,8 @@ def print_error(process_name, stdout, stderr):
 
     print(">! ERROR")
     print("- STDOUT START -")
-    print(stdout)
+    for line in iter(stdout.readline, b''):
+        print(line.rstrip())
     print(" - STDOUT END -")
     print(">! ERROR: Could not start " + process_name + " process, please see above trace.")
 
@@ -233,8 +233,12 @@ def print_error(process_name, stdout, stderr):
 if __name__ == '__main__':
 
     config = configparser.ConfigParser()
-    parser = argparse.ArgumentParser(description='Run ArchSimDB')
+    parser = argparse.ArgumentParser(description='Runs ArchSimDB, or sets it up and runs if `--setup True` argument '
+                                                 'given.')
 
+    parser.add_argument('user', type=str,
+                        help='Defines which user\'s statfiles will be used by ArchSimDB. CASE SENSITIVE.'
+                             '(Type: %(type)s)')
     parser.add_argument('--dbpath', dest='dbpath', type=str, nargs=1, default=['db/'],
                         help='The absolute path to be used as the mongodb directory. If this is a first time '
                              'setup, you will need to create an empty directory first for the mongo database. '
@@ -258,6 +262,7 @@ if __name__ == '__main__':
                         help='Determines whether to perform program setup such as creating the virtual environment, '
                              'installing dependencies. Should only be performed once. '
                              '(Default: %(default)s. Type: %(type)s)')
+
 
     arguments = parser.parse_args()
 
