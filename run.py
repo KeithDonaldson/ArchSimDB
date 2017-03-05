@@ -30,6 +30,9 @@ def set_config(args):
         print(">> Exiting, failed to run.")
         exit()
 
+    # - Set Workload Separator
+    config.set('app:config', 'workload_separator', str(args.workload_separator[0]))
+
     # - Set Mongouri
     if args.mongo_uri[0][-1] != '/':
         config.set('app:main', 'mongo_uri', args.mongo_uri[0] + '/' + args.dbname[0] + '_' + args.user)
@@ -240,16 +243,16 @@ if __name__ == '__main__':
                         help='Defines which user\'s statfiles will be used by ArchSimDB. CASE SENSITIVE.'
                              '(Type: %(type)s)')
     parser.add_argument('--dbpath', dest='dbpath', type=str, nargs=1, default=['db/'],
-                        help='The absolute path to be used as the mongodb directory. If this is a first time '
-                             'setup, you will need to create an empty directory first for the mongo database. '
+                        help='The absolute path to be used as the mongodb directory. Mongo requires an empty directory '
+                             'to store data.'
                              '(Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--dbname', dest='dbname', type=str, nargs=1, default=['archsimdb'],
-                        help='The name of your mongodb database to connect to. If one does not exist, it will be'
-                             'created with this name. (Default: %(default)s. Type: %(type)s)')
+                        help='The name prefix of your mongodb database to connect to. For example, if you choose '
+                        '`data`, mongo will connect to {mongo_uri}/data_{user}. (Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--filespath', dest='filespath', type=str, nargs=1, default=['statfiles/'],
-                        help='The absolute path to a directory containing experiment directories. That is, the '
-                             'directory in which there is a structure of `experiments/configurations/statfiles*` '
-                             'within. (Default: %(default)s. Type: %(type)s)')
+                        help='The absolute path to the data directory. That is, the directory in which there is a '
+                             'structure of `users/experiments/configurations/*`. '
+                             '(Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--mongouri', dest='mongo_uri', type=str, nargs=1, default=['mongodb://localhost:27017/'],
                         help='The uri that your mongo daemon is to run on. (Default: %(default)s. Type: %(type)s)')
     parser.add_argument('--port', dest='port', type=int, nargs=1, default=[6543], required=False,
@@ -262,7 +265,12 @@ if __name__ == '__main__':
                         help='Determines whether to perform program setup such as creating the virtual environment, '
                              'installing dependencies. Should only be performed once. '
                              '(Default: %(default)s. Type: %(type)s)')
-
+    parser.add_argument('--workloadseparator', dest='workload_separator', type=str, nargs=1, default=['None'],
+                        help='Defines what character is used to split workload (statfile) names for comparison. '
+                             'If your names are of the form `x.y.z.txt`, with x being the workload name, you can '
+                             'choose `.` here to compare with any other statfiles that have x workload. The default '
+                             'is to use the full file name. '
+                             '(Default: %(default)s. Type: %(type)s)')
 
     arguments = parser.parse_args()
 

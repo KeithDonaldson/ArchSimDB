@@ -7,18 +7,61 @@ This is the source code for my 4th Year Honours Project.
 
 ### Preface
 
-These instructions are given for Linux systems only, and this software has only been tested on Linux systems. Python 3 is used throughout, and ArchSimDB will not work with Python 2.
+These instructions are given for *nix systems only, and this software has only been tested on *nix systems. Python 3 is used throughout, and ArchSimDB will not work with Python 2.
 
 ### Pre-requisites
 
-MongoDB is used as a database for ArchSimDB. To download MongoDB, follow the guide on the [MongoDB website](https://docs.mongodb.com/manual/administration/install-on-linux/) for your operating system. It may be as simple as `dnf install mongodb-org-server`. You must install `mongodb-org-server` instead of `mongodb-org` as ArchSimDB requires the mongo daemon included in the server version.
+MongoDB is used as a database for ArchSimDB. To install MongoDB, it may be as simple as using your operating sytem's default package manager, i.e. `dnf/apt-get/brew install mongodb-org-server`, but if not you can follow the guide on the [MongoDB website](https://docs.mongodb.com/manual/administration/install-on-linux/) for your operating system. You must install `mongodb-org-server`, not `mongodb-org`.
+
+Python 3 is also a requirement, although many *nix systems come pre-packaged with this.
 
 ### Launching the web app
 
 1. Clone the repository into a working directory using `git clone https://github.com/KeithDonaldson/ArchSimDB.git`
-2. Move to the `ArchSimDB` folder and run the command `python3 run.py --setup True`. This should take care of everything.
+2. Move to the `ArchSimDB` folder and run the command `python3 run.py {user} --setup True`, replacing `{user}` with a user in the statfiles directory. Out of the box, you can choose from either `user1` or `user2`, i.e. `python3 run.py user1 --setup True`. This command should take care of everything.
 
-The webapp should now be running locally, with the default address being [http://localhost:6543](http://localhost:6543).
+The webapp should now be running locally, with the default address being [http://localhost:6543](http://localhost:6543). If you get an error during setup, consult the Troubleshooting section.
+
+It is thoroughly recommended to run `python3 run.py -h` to look at all of the arguments you can provide to the system. These could help integrate ArchSimDB into your existing workspace.
+
+## Using ArchSimDB
+
+### Setting up the Raw Data Directory
+
+**Note**: You needn't set up a directory if you are just testing ArchSimDB, as by default it takes data from the example directory at `~/statfiles/`.
+
+The only real setup required for ArchSimDB to work is to have a directory in the format it expects. The following will explain how to set up a directory correctly. Note that this repo has a working directory available as an example at `~/statfiles/`, where `~` is ArchSimDB's root directory.
+
+At the top level of your raw data directory is a directory for every user of the system. The most likely scenario is that you only have one directory here for your own raw data.
+
+At the second level is a directory for every experiment in the system. An Experiment may be something like 'Testing different cache replacement policies on x86 processors'. It is only a directory (i.e. metadata) and there should be no files at this level.
+
+At the third level is a directory for every configuration of a given experiment. A configuration might be 'LRU 64MB Cache' for the example experiment given above. Once again, it is only a directory (i.e. metadata) and there should be no files at this level.
+
+Finally, the fourth level are all of the raw statfiles for a given configuration. These are called 'applications' in ArchSimDB. The raw data from running the simulator with the given configuration for a paricular experiment resides at this level.
+
+The expected directory structure is: {Users}/{Experiments}/{Configurations}/{Applications/Raw statfiles}
+
+ArchSimDB takes these raw and parses and stores the data in a database. If you leave all `run.py` settings as default and choose `user1`, the source files used by ArchSimDB will reside at `~/statfiles/user1/`. You can use your own statfile path by providing `run.py` with a `--filespath` argument.
+
+### Understanding the Database
+
+MongoDB is a No-SQL solution, and as such all of the database contents are stored in a directory (default: `~/db/`). Each user has it's own database and as such you can switch between users freely without losing the data. Moreover, you are free to delete the raw statfiles as by default ArchSimDB will not update it's database to reflect deleted files. Should you wish to delete entries, see the [Deleting](#Deleting) section for more information.
+
+### Syncing
+
+Upon first launching the web app, you should see a page displaying the amount of experiments, configurations, and applications (statfiles) in the database. These should all be zero on first launch. To sync the database with the chosen statfile directory, navigate to the 'Sync' page and click the 'Sync' button. This may take a few seconds or minutes, depending on how large the data set is. The database should now be filled with all sucessfully parsed statfile data.
+
+### Viewing Data
+
+You can look at the data in the database from the pages within the 'Search Database' category in the navigation menu. All of the 'List of...' pages just show metadata. Actual parsed statfile data can be viewed by going to the 'View Database' page and selecting an application. The table allows sorting and searching.
+
+### Comparing Data
+
+
+
+### Deleting
+
 
 ## Troubleshooting
 
@@ -26,7 +69,7 @@ The webapp should now be running locally, with the default address being [http:/
 
 If the `run.py` script is giving you trouble, it is likely encountering an unexpected issue. In setup mode, the script performs the following tasks in this order, with non-setup mode skipping steps 1-4:
 
-1. Attempts to create the directory at the path given by the --dbpath argument (default: 'db/') by running `os.mkdir({'db/'})`.
+1. Attempts to create the directory at the path given by the --dbpath argument (default: 'db/') by running `mkdir({'db/'})`.
 2. Attempts to create the virtual environment at the path given by the --envpath argument (default: 'env/') by running `python3 -m venv {env/}`.
 3. Attempts to install `setuptools` by running `pip3 install setuptools`.
 4. Attempts to install all Python dependencies by running `pip3 install -e .`.

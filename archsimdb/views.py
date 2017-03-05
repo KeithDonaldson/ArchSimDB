@@ -268,6 +268,13 @@ def compare_results(request, permalink_data=None):
             fields = request.POST.getall('fields[]')
             apps = request.POST.getall('apps[]')
 
+        config = configparser.ConfigParser()
+        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
+        workload_separator = config.get('app:config', 'workload_separator')
+
+        if workload_separator == 'None':
+            workload_separator = None
+
         warnings = []
         workloads = set()
         configs = set()
@@ -280,8 +287,12 @@ def compare_results(request, permalink_data=None):
 
             # - Gather the required information from the application
             _exp_name, _conf_name, _sim_name = app.split('/')[:3]
-            workloads.add(_sim_name)
-            configs.add(_exp_name + '/' + _conf_name)
+
+            workload = _sim_name.split(workload_separator)[0]
+            config = _exp_name + '/' + _conf_name
+
+            workloads.add(workload)
+            configs.add(config)
             filters = {'_exp_name': _exp_name, '_conf_name': _conf_name, '_sim_name': _sim_name}
 
             # - DATABASE CALL #
@@ -314,7 +325,7 @@ def compare_results(request, permalink_data=None):
                                         " simulation data used contains the required fields for " + field + " in the "
                                         "application " + app)
 
-            results[app] = result
+            results[config + '/' + workload] = result
 
         # - Sort the column and row headings. Unnecessary, but makes for easier reading on results page
         workloads = sorted(workloads)

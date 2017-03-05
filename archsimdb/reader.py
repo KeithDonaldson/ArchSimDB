@@ -29,7 +29,7 @@ class Reader:
         # - Open the given file in read mode, split the lines, and feed that to the parser.
         input_file = open(input_filepath, 'r')
         file = input_file.read()
-        parsed_data = parser.parse(file)
+        parsed_data = parser.parse(file, input_filepath)
 
         return parsed_data
 
@@ -49,12 +49,15 @@ class Parser:
         self.output_data = {}
         self.line_number = 0
 
-    def parse(self, file):
+    def parse(self, file, filepath):
         """
         Parses a statfile
 
         :param file: The read input statfile
         :type file: str
+
+        :param filepath: The input statfile's filepath
+        :type filepath: str
 
         :return: A dictionary with parsed file data
         :rtype: dict
@@ -67,14 +70,14 @@ class Parser:
             try:
                 return self.parse_flexus_statfile(lines)
             except ParserException as e:
-                logging.error("ERROR: Could not parse statfile (read as Flexus), see error below:")
+                logging.error("ERROR: Cannot parse statfile (believed to be Flexus) at " + filepath + ", see below:")
                 logging.error(e.msg)
                 return None
         elif file_type == "JSON":
             try:
                 return self.parse_json(file)
-            except json.decoder.JSONDecodeError as e:
-                logging.error("ERROR: Cannot parse statfile (read as JSON), see error below:")
+            except ValueError as e:
+                logging.error("ERROR: Cannot parse statfile (believed to be JSON) at " + filepath + ", see below:")
                 logging.error(e.msg)
                 return None
         else:

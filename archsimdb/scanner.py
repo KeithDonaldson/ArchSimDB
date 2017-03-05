@@ -28,6 +28,7 @@ class Scanner:
         self.statfile_metadata = {}
         self.checksums = {}
         self.list_of_all_statfile_data = []
+        self.failed_to_parse_statfiles = []
         self.logs = []
 
         config = configparser.ConfigParser()
@@ -90,18 +91,20 @@ class Scanner:
                                          "(i.e. not in user/experiment/configuration/) at " + filepath)
                         continue  # The file is not of the form working_path/experiment/configuration, abort
 
-                    if filepath not in self.checksums:
-                        meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                    if filepath not in self.checksums:  # New file
                         self.logs.append("Found new file at " + filepath)
                         self.prepare_input(filepath)
-                    elif self.checksums.get(filepath) != self.hashfile(statfile, hashlib.md5()):
-                        meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                        if filepath not in self.failed_to_parse_statfiles:
+                            meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                    elif self.checksums.get(filepath) != self.hashfile(statfile, hashlib.md5()):  # Changed file
                         self.logs.append("Found changed file at " + filepath)
                         self.prepare_input(filepath)
-                    else:
+                        if filepath not in self.failed_to_parse_statfiles:
+                            meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                    else:                        # Unchanged file
                         meta_file.write(filepath + " " + self.checksums.get(filepath) + "\n")
                         self.logs.append("Found unchanged file at " + filepath)
-    
+
         meta_file.close()
         statfile_data = self.list_of_all_statfile_data
 
@@ -209,6 +212,7 @@ class Scanner:
             self.list_of_all_statfile_data.append(parsed_data)
         else:
             self.logs.append("Failed to parse file at " + filepath)
+            self.failed_to_parse_statfiles.append(filepath)
 
     @staticmethod
     def hashfile(afile, hasher, blocksize=65536):

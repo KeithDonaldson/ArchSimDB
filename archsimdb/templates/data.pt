@@ -16,7 +16,7 @@
         <script src="${request.static_url('archsimdb:static/vendor/datatables-responsive/dataTables.responsive.js')}"></script>
 
         <script type="text/javascript" id="data" data="${data}">
-            var data = JSON.parse($("#data").attr("data"))[0];
+            var data = JSON.parse($("#data").attr("data"));
             var listdata = []
             for (var key in data) {
                 var val = data[key];
@@ -29,7 +29,6 @@
                 }
             }
             var parsed_data = { data: listdata };
-            console.log(parsed_data);
             $(document).ready(function() {
                 $('#data_table').DataTable({
                     data: parsed_data.data,
