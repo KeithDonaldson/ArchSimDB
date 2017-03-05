@@ -196,11 +196,13 @@
             </div>
 
             <div class="col-xs-5">
+                <h4>All Fields</h4>
                 <select name="fields" id="fields" class="form-control" size="8" multiple="multiple">
                 </select>
             </div>
 
             <div class="col-xs-2">
+                <p style="margin-top: 20px;" />
                 <button type="button" id="fields_undo" class="btn btn-primary btn-block">undo</button>
                 <button type="button" id="fields_rightAll" class="btn btn-block"><i class="glyphicon glyphicon-forward"></i></button>
                 <button type="button" id="fields_rightSelected" class="btn btn-block"><i class="glyphicon glyphicon-chevron-right"></i></button>
@@ -210,6 +212,7 @@
             </div>
 
             <div class="col-xs-5">
+                <h4>Chosen Fields</h4>
                 <select name="fields_to" id="fields_to" class="form-control" size="8" multiple="multiple"></select>
             </div>
 

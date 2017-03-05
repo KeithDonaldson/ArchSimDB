@@ -86,7 +86,7 @@
                             var max = newdata[1];
                             var maxIndex = 1;
                             var maxIndeces = [1];
-                            var nullCounter = 0;
+                            var maxValues = [max]
 
                             for (var i = 2; i < newdata.length; i++) {
                                 if (newdata[i] > max) {
@@ -94,28 +94,19 @@
                                     max = newdata[i];
                                 } else if (newdata[i] == max) {
                                     maxIndeces.push(i);
-                                } else if (newdata[i] == null) {
-                                    nullCounter += 1;
+                                    maxValues.push(newdata[i]);
                                 }
                             }
 
+                            var max_from_array = Math.max.apply(Math, maxValues);
+
                             if (maxIndeces.length != newdata.length - 1) {
-                                if (nullCounter == 0) {
-                                    if (maxIndeces.length > 1) {
-                                        for (var x = 0; x < maxIndeces.length; x++) {
-                                            $(row).find('td:eq(' + maxIndeces[x] + ')').css('color', 'red');
-                                        }
-                                    } else {
-                                        $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
+                                if (max_from_array >= max) {
+                                    for (var x = 0; x < maxIndeces.length; x++) {
+                                        $(row).find('td:eq(' + maxIndeces[x] + ')').css('color', 'red');
                                     }
-                                } else if (nullCounter == newdata.length - 2) {
-                                    $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
                                 } else {
-                                    if (nullCounter + maxIndeces.length != newdata.length - 1) {
-                                        for (var x = 0; x < maxIndeces.length; x++) {
-                                            $(row).find('td:eq(' + maxIndeces[x] + ')').css('color', 'red');
-                                        }
-                                    }
+                                    $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
                                 }
                             }
                         }

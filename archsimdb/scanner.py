@@ -18,7 +18,8 @@ class Scanner:
         db_actions: An instance of the DatabaseActions class
         statfile_metadata: A dictionary to store metadata from a given statfile
         checksums: A dictionary of checksums (md5 hashes) for the statfiles found
-        list_of_all_statfile_data: A list containing the parsed statfile data for all files found
+        list_of_all_statfile_data: A list containing the parsed statfile data for all sucessfully parsed files found
+        failed_to_parse_statfiles: A list containing the names of any statfiles that failed to parse
         logs: A list containing the logs generated from the scanning process
     """
 
@@ -83,7 +84,8 @@ class Scanner:
     
             for file in filenames:
                 if not file.startswith(".archsimdb"):
-                    filepath = dirpath + '/' + file
+                    filepath = os.path.join(dirpath, file)
+                    relative_filepath = os.path.relpath(filepath, self.working_path)
                     statfile = open(filepath, 'rb')
 
                     if self.working_path.split('/') != filepath.split('/')[:-3]:
@@ -91,18 +93,18 @@ class Scanner:
                                          "(i.e. not in user/experiment/configuration/) at " + filepath)
                         continue  # The file is not of the form working_path/experiment/configuration, abort
 
-                    if filepath not in self.checksums:  # New file
+                    if relative_filepath not in self.checksums:  # New file
                         self.logs.append("Found new file at " + filepath)
                         self.prepare_input(filepath)
                         if filepath not in self.failed_to_parse_statfiles:
-                            meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
-                    elif self.checksums.get(filepath) != self.hashfile(statfile, hashlib.md5()):  # Changed file
+                            meta_file.write(relative_filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                    elif self.checksums.get(relative_filepath) != self.hashfile(statfile, hashlib.md5()):  # Changed
                         self.logs.append("Found changed file at " + filepath)
                         self.prepare_input(filepath)
                         if filepath not in self.failed_to_parse_statfiles:
-                            meta_file.write(filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
+                            meta_file.write(relative_filepath + " " + self.hashfile(statfile, hashlib.md5()) + "\n")
                     else:                        # Unchanged file
-                        meta_file.write(filepath + " " + self.checksums.get(filepath) + "\n")
+                        meta_file.write(relative_filepath + " " + self.checksums.get(relative_filepath) + "\n")
                         self.logs.append("Found unchanged file at " + filepath)
 
         meta_file.close()
