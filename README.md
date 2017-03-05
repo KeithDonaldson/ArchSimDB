@@ -61,14 +61,55 @@ You can compare data from multiple applications by first going to the 'Compare' 
 You should see a tree-view of the data in the database. Here you can select all of the applications that you wish to compare data from. It is generally expected that you choose the same workloads/benchmarks over multiple configurations, e.g. choosing the 'perlbench-40B1' and 'GemsFTD-40B1' applications from x different configurations*. Any combination of applications here will work, though. Click the 'Submit These Applications' button.
 
 A list of all possible fields/stats from the chosen applications will be displayed, including any [composite stats](#composite-stats) which are signified with a `$` at the beginning. Choose some by clicking the arrows to send across to the 'Chosen Fields' box. You can multiselect and search here. Click the 'Submit Fields and Compare' button and wait. This may take a while depending on the number of fields/applications chosen.
- 
+
+You should now see a table for every field/stat chosen, with rows representing workloads and columns representing configurations.
+
+#### Setting: Baseline Column
+
+This option set all data in the table relative to the chosen column.
+
+#### Setting: Download as CSV
+
+This option takes the data from the tables and outputs it as downloadable CSV file. You can then use the data in a Spreadsheet program.
+
+#### Setting: Get Permalink
+
+Should you wish to save the page for later use, you can get a permalink here that can be used at any time.
+
+#### Setting: Generate Chart
+
+This allows you to view the data as a chart, with x-axis as workload and y-axis as value.
+
+1. Choose the stat to generate a chart for
+2. Choose the type of graph to generate
+3. Choose whether or not you require advanced data edit**
+4. Click 'Generate Chart'
+
+You can download the chart as an image by clicking the 'Download as Image' button.
+
+___
+
 *Comparisons are made on applications with the same filename by default, so 'perlbench-40B1.stat' will be compared with any other chosen applications called 'perlbench-40B1.stat'. If this doesn't work with your naming scheme, you can define a separator with the argument `--workloadseparator` at runtime to split the filename. So if your filenames are in the form `workload-cycles-timstamp.stat`, for example, you can define `--workloadseparator` as `-` which would mean comparisons happen on `workload` and not the full filename.
+
+**Advanced data edit allows you to edit the raw chart data before it gets generated. This may be useful if you want to remove a particular workload from the chart, for example. Moreover, there is an option to replace nulls (i.e. data not in database) with zeroes in case the null values are messing up your line graph.
 
 ### Deleting
 
 You can delete the data from the database by going to the 'Delete' page and clicking the 'Delete' button. This deletes all data in the database and the tracking file.
 
 ### Composite Stats
+
+Composite Stats are stats which are _not_ in the database but are made up of mutliple other stats that _are_ in the database. For example, `sys-L1d-HitPercentage = sys-L1d-ProfileHit / (sys-L1d-ProfileMiss + sys-L1d-ProfileHit)` is a composite stat which calculates Hit Percentage in the L1d Cache from two stats that are in the database: `sys-L1d-ProfileHit` and `sys-L1d-ProfileMiss`.
+
+ArchSimDB supports these as another tool to aid in simulator data analysis. ArchSimDB keeps these composite stats in your raw data directory with a file called `.archsimdb_composite_stats` at the user root, i.e. `~/statfiles/user1/.archsimdb_composite_stats`. You will need to create this file if it does not exist, note the fullstop `.` at the beginning.
+
+#### Syntax
+
+The syntax is simple. A composite stat must be on a single line and be a simple maths expression that parses in Python. That is, it must start with `{statname} =` with `{statname}` being whatever you desire. Wherever you wish to refer to a stat in the database, simply wrap the stat name in curly braces (`{` and `}`) and make sure the stat name is _exactly_ as it is in the database. An example is below:
+
+`sys-L1d-HitPercentage = {sys-L1d-ProfileHit} / ({sys-L1d-ProfileMiss} + {sys-L1d-ProfileHit})`
+
+Where  `sys-L1d-ProfileHit` and `sys-L1d-ProfileMiss` are stats that are in the database. It might be worth making sure that your equation parses in the Python interpreter (replacing variables with a constant) before entering it into the `.archsimdb_composite_stats` file.
 
 ## Troubleshooting
 

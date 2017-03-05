@@ -83,30 +83,24 @@
                             var newdata = Object.keys(data).map(function (key) {
                                 return data[key];
                             });
-                            var max = newdata[1];
-                            var maxIndex = 1;
-                            var maxIndeces = [1];
-                            var maxValues = [max]
 
-                            for (var i = 2; i < newdata.length; i++) {
-                                if (newdata[i] > max) {
-                                    maxIndex = i;
-                                    max = newdata[i];
-                                } else if (newdata[i] == max) {
-                                    maxIndeces.push(i);
-                                    maxValues.push(newdata[i]);
+                            function getAllIndexes(arr, val) {
+                                var indexes = [], i = -1;
+                                while ((i = arr.indexOf(val, i+1)) != -1){
+                                    indexes.push(i+1);
                                 }
+                                return indexes;
                             }
 
-                            var max_from_array = Math.max.apply(Math, maxValues);
+                            var arrayAllMaxIndexes = function(array){
+                                return getAllIndexes(array, Math.max.apply(null, array));
+                            };
+
+                            var maxIndeces = arrayAllMaxIndexes(newdata.slice(1, newdata.length));
 
                             if (maxIndeces.length != newdata.length - 1) {
-                                if (max_from_array >= max) {
-                                    for (var x = 0; x < maxIndeces.length; x++) {
-                                        $(row).find('td:eq(' + maxIndeces[x] + ')').css('color', 'red');
-                                    }
-                                } else {
-                                    $(row).find('td:eq(' + maxIndex + ')').css('color', 'red');
+                                for (var x = 0; x < maxIndeces.length; x++) {
+                                    $(row).find('td:eq(' + maxIndeces[x] + ')').css('color', 'red');
                                 }
                             }
                         }
@@ -127,8 +121,8 @@
             }
 
             // Fill the select menu for choosing which stat to generate a graph for with available stats
-            for (var stat in data.data) {
-                $('#generate_chart_stat').append($('<option>', {value:stat, text:stat}));
+            for (var stat in data.stats) {
+                $('#generate_chart_stat').append($('<option>', {value:data.stats[stat], text:data.stats[stat]}));
             }
 
 
@@ -491,7 +485,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal" style="float:left;">Close</button>
                         <button type="button" class="btn btn-primary" onClick="downloadGraphImage()">Download as Image</button>
                     </div>
                 </div>
@@ -511,7 +505,7 @@
                         <textarea rows="20" id="advanced_edit_modal_textbox" class="form-control"></textarea>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="close" data-dismiss="modal" style="float:left;">Close</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal" style="float:left;">Close</button>
                         <button type="button" class="btn btn-default" id="advanced_edit_modal_replace_nulls">Replace Nulls with 0</button>
                         <button type="button" class="btn btn-primary" id="advanced_edit_modal_submit">Generate Chart</button>
                     </div>
