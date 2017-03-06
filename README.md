@@ -3,7 +3,7 @@
 
 This is the source code for ArchSimDB. ArchSimDB is a tool designed for Computer Architects that allows them to take raw simulator output files -- specfically Flexus at this time -- and compare and visuliase this data easily. The aim of the project is to create a tool that will significantly cut down the amount of time (and potentially errors) currently involved in taking large amounts of raw data and comparing it with other raw data.
 
-**Note**: All following instructions are given for *nix systems only as this software has only been tested on *nix systems. Python 3 is used throughout, and ArchSimDB will not work with Python 2.
+**Note**: All following instructions are given for *nix systems only (Mac OS X included) as this software has only been tested on *nix systems. Python 3 is used throughout, and ArchSimDB will not work with Python 2.
 
 ## Download and Installing ArchSimDB
 
@@ -22,9 +22,19 @@ The webapp should now be running locally, with the default address being [http:/
 
 It is thoroughly recommended to run `python3 run.py -h` to look at all of the arguments you can provide to the system. These could help integrate ArchSimDB into your existing workspace.
 
-To stop the web app, stop the process with CTRL+C on the command line or by using `kill {pid}`. The script will take care of ending subprocesses.
+The process remains active on the terminal until closed. To stop the web app, stop the process with CTRL+C on the command line or by using `kill {pid}`. The script will take care of ending subprocesses.
 
 ## Using ArchSimDB
+
+### Quick Overview
+
+If you use the default values at runtime, the following instructions will hold. Otherwise, it is recommended you read the more in-depth guide.
+
+1. Sync the data to the database: Go to 'Sync' page and click the 'Sync' button.
+2. View the data: Go to 'Search Database' -> 'View Database' and choose an application.
+3. Compare the data: Go to 'Compare', select any applications you desire and click 'Submit These Applications' and then select the stats you want to compare and click 'Submit Fields and Compare'. You will see a table for each stat and a settings menu at the top. See the [Comparing Data](#comparing-data) section for information on these settings.
+4. Deleting the data: Go to 'Delete' and click the 'Delete' button.
+5. Add composite stats: Go to the user root directory and create a file called `.archsimdb_composite_stats`, i.e. `~/statfiles/user1/.archsimdb_composite_stats`. Read the [Syntax Guide](#syntax) for composite stats and save the file.
 
 ### Setting up the Raw Data Directory
 
@@ -64,21 +74,15 @@ A list of all possible fields/stats from the chosen applications will be display
 
 You should now see a table for every field/stat chosen, with rows representing workloads and columns representing configurations.
 
-#### Setting: Baseline Column
+##### Compare Settings
 
-This option set all data in the table relative to the chosen column.
+**Baseline Column**: This option set all data in the table relative to the chosen column.
 
-#### Setting: Download as CSV
+**Download as CSV**: This option takes the data from the tables and outputs it as downloadable CSV file. You can then use the data in a Spreadsheet program.
 
-This option takes the data from the tables and outputs it as downloadable CSV file. You can then use the data in a Spreadsheet program.
+**Get Permalink**: Should you wish to save the page for later use, you can get a permalink here that can be used at any time.
 
-#### Setting: Get Permalink
-
-Should you wish to save the page for later use, you can get a permalink here that can be used at any time.
-
-#### Setting: Generate Chart
-
-This allows you to view the data as a chart, with x-axis as workload and y-axis as value.
+**Generate Chart**: This allows you to view the data as a chart, with x-axis as workload and y-axis as value.
 
 1. Choose the stat to generate a chart for
 2. Choose the type of graph to generate
@@ -133,7 +137,7 @@ Steps 3, 4, and 6 are run with respect to the virtual environment created, and a
 
 Step 5 is the only process that runs externally from this project, and as such is where the problems are likely to occur. Common errors are that the process is already running (i.e. you have a mongod instance already) or that your --dbpath directory doesn't exist (will only happen if step 1 encountered an error and you skipped). 
 
-As a last resort, you can run the commands listed above (steps 1-6) manually from the command line. Note that steps 3, 4, and 6 will need to start with your virtual environment `bin` path, e.g. `pserve --reload development.ini` becomes `env/bin/pserve --reload development.ini` and `pip3 install setuptools` becomes `env/bin/pip3 install setuptools`.
+As a last resort, you can run the commands listed above (steps 1-6) manually from the command line. Note that steps 3, 4, and 6 will need to start with your virtual environment `bin` path, e.g. `pserve --reload development.ini` becomes `env/bin/pserve --reload development.ini` and `pip3 install setuptools` becomes `env/bin/pip3 install setuptools`. You will also need to set some variables in the `development.ini` file, namely `filespath`, `user`, `workload_separator`, `port`, and `mongo_uri`.
 
 Other issues? Contact me at contact@keithdonaldson.co.uk.
 
