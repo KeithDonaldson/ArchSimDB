@@ -95,12 +95,12 @@ def start_processes(args):
         p_makevenv = subprocess.Popen(['python3', '-m', 'venv', envpath],
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        p_makevenv.communicate()
+        p_me_stdout, p_me_stderr = p_makevenv.communicate()
 
         if p_makevenv.returncode == 0:
             print(">> Venv created successfully at " + envpath)
         else:
-            print_error('python -m venv ' + envpath, p_makevenv.stdout, p_makevenv.stderr)
+            print_error('python -m venv ' + envpath, p_me_stdout, p_me_stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -110,12 +110,12 @@ def start_processes(args):
         p_installsetuptools = subprocess.Popen([os.path.join(envpath, 'bin', 'pip3'), 'install', 'setuptools'],
                                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        p_installsetuptools.communicate()
+        p_is_stdout, p_is_stderr = p_installsetuptools.communicate()
 
         if p_installsetuptools.returncode == 0:
             print(">> setuptools installed successfully")
         else:
-            print_error('pip3 install setuptools ' + envpath, p_installsetuptools.stdout, p_installsetuptools.stderr)
+            print_error('pip3 install setuptools ' + envpath, p_is_stdout, p_is_stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -125,12 +125,12 @@ def start_processes(args):
         p_installdependencies = subprocess.Popen([os.path.join(envpath, 'bin', 'pip3'), 'install', '-e', '.'],
                                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        p_installdependencies.communicate()
+        p_id_stdout, p_id_stderr = p_installdependencies.communicate()
 
         if p_installdependencies.returncode == 0:
             print(">> Dependencies installed successfully")
         else:
-            print_error('pip3 install -e .' + envpath, p_installdependencies.stdout, p_installdependencies.stderr)
+            print_error('pip3 install -e .' + envpath, p_id_stdout, p_id_stderr)
             print(">> Exiting, failed to run.")
             exit()
 
@@ -227,9 +227,11 @@ def print_error(process_name, stdout, stderr):
 
     print(">! ERROR")
     print("- STDOUT START -")
-    for line in iter(stdout.readline, b''):
-        print(line.rstrip())
-    print(" - STDOUT END -")
+    print(stdout.decode("utf-8").rstrip())
+    print("- STDOUT END -")
+    print("- STDERR START -")
+    print(stderr.decode("utf-8").rstrip())
+    print(" - STDERR END -")
     print(">! ERROR: Could not start " + process_name + " process, please see above trace.")
 
 
