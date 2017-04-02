@@ -49,12 +49,12 @@ class Parser:
         self.output_data = {}
         self.line_number = 0
 
-    def parse(self, file, filepath):
+    def parse(self, input_file, filepath):
         """
         Parses a statfile
 
-        :param file: The read input statfile
-        :type file: str
+        :param input_file: The read input statfile
+        :type input_file: str
 
         :param filepath: The input statfile's filepath
         :type filepath: str
@@ -63,7 +63,7 @@ class Parser:
         :rtype: dict
         """
 
-        lines = file.splitlines()
+        lines = input_file.splitlines()
         file_type = self.determine_filetype(lines)
 
         if file_type == "Flexus":
@@ -75,13 +75,14 @@ class Parser:
                 return None
         elif file_type == "JSON":
             try:
-                return self.parse_json(file)
+                return self.parse_json(input_file)
             except ValueError as e:
                 logging.error("ERROR: Cannot parse statfile (believed to be JSON) at " + filepath + ", see below:")
-                logging.error(e.msg)
+                logging.error(e)
                 return None
         else:
             logging.error("Unknown filetype")
+            return None
 
     def parse_flexus_statfile(self, lines):
         """
@@ -96,12 +97,13 @@ class Parser:
 
         self.input_data = lines
 
-        # - Deal with the first line, always 'sum' or 'all'.
+        # - Deal with the first line, always 'sum' or 'all' and set _sim_type
 
         if self.input_data[0] != "sum" and self.input_data[0] != "all":
             logging.error("No 'sum' or 'all' found")
             raise ParserException("Sum or all not included on line 1, found '" + self.input_data[0] + "'")
 
+        self.output_data['_sim_type'] = "Flexus"
         line_type = self.flexus_next_type()
         self.line_number += 1
 
@@ -253,17 +255,13 @@ class Parser:
             else:
                 inside_val = cpv_line.split()[0]  # The "Count" column
 
-            table_data[inside_key] = int(inside_val)
+            self.output_data[key + ':' + inside_key] = int(inside_val)
 
             logging.debug("Line #: {0}\t| Type: CPV | Key: {1} | Inside Key: {2} | Inside Value: {3}".format(
                 self.line_number + 1, key, inside_key, inside_val))
 
             self.line_number += 1
 
-        # The value of this key-value pair is set to the dictionary 'table_data',
-        # so we have a nested dictionary here.
-
-        self.output_data[key] = table_data
         self.line_number += 3                    # Skip the summation lines
 
     def flexus_parse_table_bs(self):
@@ -293,20 +291,15 @@ class Parser:
 
             inside_key = bs_line[0].strip()      # The "Bucket" column
             inside_val = bs_line[1]              # The "Size" column
-            table_data[inside_key] = int(inside_val)
+
+            self.output_data[key + ':' + inside_key] = int(inside_val)
 
             logging.debug("Line #: {0}\t| Type: BS | Key: {1} | Inside Key: {2} | Inside Value: {3}".format(
                 self.line_number + 1, key, inside_key, inside_val))
 
             self.line_number += 1
 
-        # The value of this key-value pair is set to the dictionary 'table_data',
-        # so we have a nested dictionary here.
-
-        self.output_data[key] = table_data
-
-    @staticmethod
-    def parse_json(file):
+    def parse_json(self, file):
         """
         Parses a statfile in JSON format
 
@@ -314,7 +307,31 @@ class Parser:
         :rtype: dict
         """
 
-        return json.loads(file)
+        keys_to_delete = []
+        keys_to_add = []
+
+        self.output_data = json.loads(file)
+        self.output_data['_sim_type'] = "JSON"
+
+        # - Take any nested dictionaries and transform into keys
+        for (key, val) in self.output_data.items():
+            if type(val) is dict:
+                print(self.output_data[key])
+                for (inside_key, inside_val) in self.output_data[key].items():
+                    keys_to_add.append({key + ':' + inside_key: inside_val})
+                keys_to_delete.append(key)
+
+        print(keys_to_delete)
+        print(keys_to_add)
+
+        for key in keys_to_delete:
+            del self.output_data[key]
+
+        for new_keys in keys_to_add:
+            for (key, val) in new_keys.items():
+                self.output_data[key] = val
+
+        return self.output_data
 
     @staticmethod
     def determine_filetype(lines):

@@ -88,6 +88,9 @@
                         <li>
                             <a href="/delete"><i class="fa fa-trash-o fa-fw"></i> Delete</a>
                         </li>
+                        <li>
+                            <a href="/composite_stats"><i class="fa fa-calculator fa-fw"></i> Composite Stats</a>
+                        </li>
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->

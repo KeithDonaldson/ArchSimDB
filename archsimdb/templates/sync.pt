@@ -1,4 +1,8 @@
 <metal:macro use-macro="master">
+    <metal:slot fill-slot="title">
+        <title>Sync | ArchSim DB</title>
+    </metal:slot>
+
     <metal:slot fill-slot="scripts">
         <script tal:condition="exists:logs" type="text/javascript" id="logs_list" logs="${logs}">
             var logs = $("#logs_list").attr("logs").replace(/'/g, '"');

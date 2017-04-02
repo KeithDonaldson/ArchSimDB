@@ -112,41 +112,81 @@ class Scanner:
 
         return {'statfile_data': statfile_data, 'logs': self.logs}
 
-    def get_composite_stats(self):
+    def get_composite_stats(self, raw=False):
         """
         Returns the composite stats found in `.archsimdb_composite_stats`
+
+        :param raw: Whether to return the raw file or a parsed version
+        :type raw: bool
 
         :return: A dictionary containing the semi-parsed composite stats
         :rtype dict
         """
 
-        composite_stats = {}
-        line_number = 0
+        if not raw:
+            composite_stats = {}
+            line_number = 0
 
-        # If the composite stats file exists, attempt to parse each line.
+            # If the composite stats file exists, attempt to parse each line.
+
+            try:
+                composite_stats_filepath = self.working_path + '/.archsimdb_composite_stats'
+                composite_stats_file = open(composite_stats_filepath, 'r')
+
+                for line in composite_stats_file.readlines():
+                    line_number += 1
+                    try:
+                        composite_stat_name = line.split('=')[0].strip()  # The left of the equals sign is the stat name
+                        composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
+                    except IndexError:
+                        self.logs.append("Failed to parse composite stat on line " + str(line_number))
+                        continue
+
+                    if self.test_equation(composite_stat_equation, line_number):
+                        composite_stats[composite_stat_name] = composite_stat_equation
+                        self.logs.append("Added composite stat called " + composite_stat_name)
+                    else:
+                        continue
+            except FileNotFoundError:
+                self.logs.append("No composite stats file found")
+
+            return {'stats': composite_stats}
+        else:
+            try:
+                composite_stats_filepath = self.working_path + '/.archsimdb_composite_stats'
+                composite_stats_file = open(composite_stats_filepath, 'r')
+
+                return_lines = []
+
+                for line in composite_stats_file.readlines():
+                    return_lines.append(line.rstrip())
+
+                return return_lines
+            except FileNotFoundError:
+                self.logs.append("No composite stats file found")
+
+    def set_composite_stats(self, stats):
+        """
+        Inserts the composite stats in `.archsimdb_composite_stats`
+
+        :param stats: The stats passed from the web interface
+        :type stats: list
+
+        :return: The logs
+        :rtype list
+        """
 
         try:
             composite_stats_filepath = self.working_path + '/.archsimdb_composite_stats'
-            composite_stats_file = open(composite_stats_filepath, 'r')
+            composite_stats_file = open(composite_stats_filepath, 'w')
 
-            for line in composite_stats_file.readlines():
-                line_number += 1
-                try:
-                    composite_stat_name = line.split('=')[0].strip()  # The left of the equals sign is the stat name
-                    composite_stat_equation = line.split('=')[1]  # Everything to the right is the equation
-                except IndexError:
-                    self.logs.append("Failed to parse composite stat on line " + str(line_number))
-                    continue
-
-                if self.test_equation(composite_stat_equation, line_number):
-                    composite_stats[composite_stat_name] = composite_stat_equation
-                    self.logs.append("Added composite stat called " + composite_stat_name)
-                else:
-                    continue
+            for line in stats:
+                composite_stats_file.write(line + "\n")
+            self.logs.append("Composite stats written successfully.")
         except FileNotFoundError:
             self.logs.append("No composite stats file found")
 
-        return {'stats': composite_stats}
+        return {'logs': self.logs}
 
     def test_equation(self, composite_stat_equation, line_number):
         """

@@ -44,6 +44,7 @@ def main(global_config, **settings):
     config.add_route('compare_results_permalink', '/compare/results/stats={stats}/apps={apps}')
     config.add_route('sync', '/sync')
     config.add_route('delete', '/delete')
+    config.add_route('composite_stats', '/composite_stats')
 
     # - JSON return routes
     config.add_route('get/configurations', '/get/configurations')

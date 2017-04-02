@@ -116,7 +116,14 @@ def data(request):
     try:
         dict_data = [dict(pn) for pn in raw_data][0]
         sim_name = dict_data.get('_sim_name')[:20]
-        return {'data': dumps(dict_data), '_sim_name': sim_name}
+
+        list_data = []
+
+        for (key, val) in dict_data.items():
+            if key[0] != '_':
+                list_data.append({'key': key, 'value': val})
+
+        return {'data': list_data, '_sim_name': sim_name}
     except IndexError:
         return {'data': {}, '_sim_name': 'Not Found'}
 
@@ -428,6 +435,34 @@ def delete(request):
     else:
         return {}
 
+
+# - COMPOSITE STATS PAGE
+@view_config(route_name='composite_stats', renderer='templates/composite_stats.pt')
+def composite_stats(request):
+    """
+    Loads and sets the composite stats from file.
+
+    :param request: The Pyramid request object
+    :type request: Request
+
+    :return: A dictionary with the deletion logs
+    :rtype: dict
+    """
+
+    if request.method == 'POST':
+        post = request.POST.get('composite_stats_area')
+        stats = post.split("\r\n")
+
+        scanner = Scanner()
+        logs = scanner.set_composite_stats(stats)
+
+        stats = scanner.get_composite_stats(raw=True)
+
+        return {'composite_stats': stats, 'logs': logs}
+    else:
+        scanner = Scanner()
+        stats = scanner.get_composite_stats(raw=True)
+        return {'composite_stats': stats}
 
 # --------------------------- #
 # -- POST and GET requests -- #
