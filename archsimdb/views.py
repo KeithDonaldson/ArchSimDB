@@ -41,7 +41,7 @@ def globals_factory(event):
     event['master'] = master
 
     config = configparser.ConfigParser()
-    config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
+    config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'config.ini')))
 
     event['user'] = config.get('app:config', 'user')
 
@@ -276,7 +276,7 @@ def compare_results(request, permalink_data=None):
             apps = request.POST.getall('apps[]')
 
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
+        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'config.ini')))
         workload_separator = config.get('app:config', 'workload_separator')
 
         if workload_separator == 'None':

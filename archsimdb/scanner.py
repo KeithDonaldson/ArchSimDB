@@ -33,7 +33,7 @@ class Scanner:
         self.logs = []
 
         config = configparser.ConfigParser()
-        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'development.ini')))
+        config.read_file(open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'config.ini')))
 
         self.working_path = config.get('app:config', 'filespath')
 
