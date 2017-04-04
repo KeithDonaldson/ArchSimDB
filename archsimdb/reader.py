@@ -321,9 +321,6 @@ class Parser:
                     keys_to_add.append({key + ':' + inside_key: inside_val})
                 keys_to_delete.append(key)
 
-        print(keys_to_delete)
-        print(keys_to_add)
-
         for key in keys_to_delete:
             del self.output_data[key]
 
