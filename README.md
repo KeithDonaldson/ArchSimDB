@@ -26,6 +26,8 @@ The process remains active on the terminal until closed. To stop the web app, st
 
 ## Using ArchSimDB
 
+Note: `~` is used throughout to represent the root directory of ArchSimDB.
+
 ### Quick Overview
 
 If you use the default values at runtime, the following instructions will hold. Otherwise, it is recommended you read the more in-depth guide.
@@ -34,7 +36,7 @@ If you use the default values at runtime, the following instructions will hold. 
 2. View the data: Go to 'Search Database' -> 'View Database' and choose an application.
 3. Compare the data: Go to 'Compare', select any applications you desire and click 'Submit These Applications' and then select the stats you want to compare and click 'Submit Fields and Compare'. You will see a table for each stat and a settings menu at the top. See the [Comparing Data](#comparing-data) section for information on these settings.
 4. Deleting the data: Go to 'Delete' and click the 'Delete' button.
-5. Add composite stats: Go to the user root directory and create a file called `.archsimdb_composite_stats`, i.e. `~/statfiles/user1/.archsimdb_composite_stats`. Read the [Syntax Guide](#syntax) for composite stats and save the file.
+5. Add composite stats: Go to the 'Composite Stats' page and edit the composite stats. These are taken directly from the `.archsimdb_composite_stats` file in the user directory. Read the [Syntax Guide](#syntax) for composite stats and click 'Update Composite Stats'.
 
 ### Setting up the Raw Data Directory
 
@@ -44,11 +46,11 @@ The only real setup required for ArchSimDB to work is to have a directory of raw
 
 At the top level of your `data` directory is a directory for every user of the system. The most likely scenario is that you only have one directory here for your own raw data. Example: `/data/keithdonaldson/`
 
-At the second level is a directory for every experiment in the system. An Experiment may be something like 'Testing different cache replacement policies on x86 processors'. These are only directories (i.e. used as metadata in the system) and there should be no files at this level. Example: `/data/keithdonaldson/x86-replacement-policies/`
+At the second level is a directory for every experiment in the system. An Experiment may be something like 'Testing different cache replacement policies on x86 processors'. These are only directories and there should be no files at this level. Example: `/data/keithdonaldson/x86-replacement-policies/`
 
-At the third level is a directory for every configuration of a given experiment. A configuration might be 'LRU 64MB Cache' for the example experiment given above. Once again, it is only a directory (i.e. metadata) and there should be no files at this level. Example: `/data/keithdonaldson/x86-replacement-policies/64MB-LRU/`
+At the third level is a directory for every configuration of a given experiment. A configuration might be 'LRU 64MB Cache' for the example experiment given above. Once again, there should be only directories at this level and no files. Example: `/data/keithdonaldson/x86-replacement-policies/64MB-LRU/`
 
-Finally, the fourth level are all of the raw statfiles for a given configuration. These are called 'applications' in ArchSimDB. Example:  `/data/keithdonaldson/x86-replacement-policies/64MB-LRU/perlbench-40B1.stat`
+Finally, the fourth level is where all of the raw statfiles for a given configuration are housed. These are called 'applications' in ArchSimDB. Example:  `/data/keithdonaldson/x86-replacement-policies/64MB-LRU/perlbench-40B1.stat`
 
 The expected directory structure is: `{Users}/{Experiments}/{Configurations}/{Applications/Raw statfiles}`
 
@@ -105,7 +107,7 @@ You can delete the data from the database by going to the 'Delete' page and clic
 
 Composite Stats are stats which are _not_ in the database but are made up of mutliple other stats that _are_ in the database. For example, `sys-L1d-HitPercentage = sys-L1d-ProfileHit / (sys-L1d-ProfileMiss + sys-L1d-ProfileHit)` is a composite stat which calculates Hit Percentage in the L1d Cache from two stats that are in the database: `sys-L1d-ProfileHit` and `sys-L1d-ProfileMiss`.
 
-ArchSimDB supports these as another tool to aid in simulator data analysis. ArchSimDB keeps these composite stats in your raw data directory with a file called `.archsimdb_composite_stats` at the user root, i.e. `~/statfiles/user1/.archsimdb_composite_stats`. You will need to create this file if it does not exist, note the fullstop `.` at the beginning.
+ArchSimDB supports these as another tool to aid in simulator data analysis. ArchSimDB keeps these composite stats in your raw data directory with a file called `.archsimdb_composite_stats` at the user root, i.e. `~/statfiles/user1/.archsimdb_composite_stats`. You can create and edit these through the 'Composite Stats' page on the web interface.
 
 #### Syntax
 
@@ -117,10 +119,9 @@ Where  `sys-L1d-ProfileHit` and `sys-L1d-ProfileMiss` are stats that are in the 
 
 ## Troubleshooting
 
-
 ### Understanding the Database
 
-MongoDB is a No-SQL solution, and as such all of the database contents are stored in a directory (default: `~/db/`). Each user has it's own database and as such you can switch between users freely without losing the data. Moreover, you are free to delete the raw statfiles as by default ArchSimDB will not update it's database to reflect deleted files. Should you wish to delete entries, see the [Deleting](#deleting) section for more information.
+MongoDB is a NoSQL solution, and as such all of the database contents are stored in a directory (default: `~/db/`). Each user has it's own database and as such you can switch between users freely without losing the data. Moreover, you are free to delete the raw statfiles as by default ArchSimDB will not update it's database to reflect deleted files. Should you wish to delete entries, see the [Deleting](#deleting) section for more information.
 
 ### Launching the web app
 
@@ -131,7 +132,7 @@ If the `run.py` script is giving you trouble, it is likely encountering an unexp
 3. Attempts to install `setuptools` by running `pip3 install setuptools`.
 4. Attempts to install all Python dependencies by running `pip3 install -e .`.
 5. Attempts to start a mongod process with `--dbpath` given by the --dbpath argument (default: 'db/') by running `mongod --dbpath {db/}`. 
-6. Attempts to start a pserve process by running `pserve --reload development.ini`.
+6. Attempts to start a pserve process by running `pserve --reload config.ini`.
 
 Steps 3, 4, and 6 are run with respect to the virtual environment created, and as such you should never require super user permissions.
 
