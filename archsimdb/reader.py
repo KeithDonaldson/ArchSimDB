@@ -316,7 +316,6 @@ class Parser:
         # - Take any nested dictionaries and transform into keys
         for (key, val) in self.output_data.items():
             if type(val) is dict:
-                print(self.output_data[key])
                 for (inside_key, inside_val) in self.output_data[key].items():
                     keys_to_add.append({key + ':' + inside_key: inside_val})
                 keys_to_delete.append(key)
