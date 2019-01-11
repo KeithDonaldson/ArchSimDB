@@ -11,7 +11,7 @@ This is the source code for ArchSimDB. ArchSimDB is a tool designed for Computer
 
 MongoDB is used as a database for ArchSimDB. To install MongoDB, it may be as simple as using your operating sytem's default package manager, i.e. `dnf/apt-get/brew install mongodb-org-server`, but if not you can follow the guide on the [MongoDB website](https://docs.mongodb.com/manual/administration/install-on-linux/) for your operating system. You must install `mongodb-org-server`, not `mongodb-org`.
 
-Python 3 is also a requirement, although many *nix systems come pre-packaged with this.
+`python3` and `python3-venv` are both required.
 
 ### Launching the web app
 
